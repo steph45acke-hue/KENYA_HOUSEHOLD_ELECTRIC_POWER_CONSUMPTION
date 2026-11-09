@@ -58,5 +58,20 @@ To move beyond basic descriptive summaries, this project is structured around an
 * **The Question:** What percentage of total active power consumption remains unaccounted for by dedicated sub-meters (kitchen, laundry, water heating), and how does this "remainder" fluctuate relative to voltage sags and grid intensity changes?
 * **Data Science Approach:** Deriving residual energy bounds through vectorised feature engineering, and analyzing multivariate correlations between voltage drops, reactive power imbalances, and unallocated baseline draws.
 
+## 🔍 Phase 1: Data Understanding, Cleaning & Data Quality
+
+### Step 1.1: Source Verification & Data Contract Execution
+
+Before performing any data transformations, Phase 1 establishes a strict data contract by verifying file integrity, size, encoding, and delimiter structures directly from the raw data source.
+
+* **File Name & Footprint:** Verified that `household_power_consumption.csv` sits correctly in the workspace directory with a total file size of **47.03 MB**.
+* **Delimiter Analysis:** Inspected raw bytes to confirm that fields are separated using semicolons (`;`) rather than standard commas, establishing the parsing schema for downstream pipeline ingestion.
+* **Initial Telemetry Inspection:** Successfully captured the raw header layout and baseline sample row without loading the full ~2 million rows into memory prematurely.
+
+#### Execution Output Snapshot
+Below is the verification output captured during the execution of the source inspection module in the Jupyter Notebook environment:
+
+![Source Verification Output Snapshot](Screenshot%20(337).png)
+
 > *"Empowering sustainable energy decisions through data-driven insight."*
 
