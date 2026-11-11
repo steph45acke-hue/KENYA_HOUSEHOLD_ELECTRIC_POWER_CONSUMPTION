@@ -73,5 +73,18 @@ Below is the verification output captured during the execution of the source ins
 
 ![Source Verification Output Snapshot](Screenshot%20(337).png)
 
+### Step 1.2: Parsing, Types & Timestamp Construction
+
+Following source verification, Phase 1.2 ingested the minute-level telemetry using flexible delimiter detection, parsed datetime structures, and enforced strict data type constraints.
+
+* **Schema Ingestion:** Successfully loaded **1,048,575 observations** across all 9 expected electrical telemetry columns.
+* **Timestamp Construction:** Combined the raw `Date` and `Time` text fields into a standardized, timezone-independent datetime index (`%d/%m/%Y %H:%M:%S`) with **0 unparseable failures**.
+* **Type Conversion & Memory Hygiene:** Converted all electrical load variables (`Global_active_power`, `Voltage`, `Sub_metering_*`, etc.) into explicit 64-bit floating-point arrays (`float64`), dropping redundant string columns to optimize memory efficiency.
+
+#### Execution Output Snapshot
+Below is the parsing verification and dtype profile captured during the execution of Step 1.2:
+
+![Parsing and Types Output Snapshot](Screenshot%20(339).png)
+
 > *"Empowering sustainable energy decisions through data-driven insight."*
 
