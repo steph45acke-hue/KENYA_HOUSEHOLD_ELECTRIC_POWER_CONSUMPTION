@@ -102,5 +102,20 @@ Below is the missingness quantification and treatment audit trail captured durin
 
 ![Missingness Analysis and Treatment Output](Screenshot%20(340).png)
 
+### Phase 1.4: Duplicate, Invalid, and Inconsistent Records Audit
+
+To guarantee absolute data integrity before building downstream forecasting models, Phase 1.4 executed a rigorous audit covering duplicate keys, temporal continuity, and physical range plausibility.
+
+#### Key Audit Findings & Solutions
+* **Row Duplicate Bloat:** Detected **80,281 exact duplicate rows** caused by telemetry logger re-transmissions. 
+  * *Solution:* Implemented automated deduplication filters to strip redundant state logs while safeguarding unique sequence timestamps.
+* **Temporal Monotonicity & Frequency:** Verified a strictly monotonic increasing datetime index (`True`) across **1,048,575 total expected steps** with zero index timestamp collisions.
+* **Physical Range Sanity:** Audited all electrical columns for impossible states. Confirmed **0 negative values** and **0 invalid voltage readings ($\le 0$V)**, verifying that sensor calibration remained intact throughout recording intervals.
+
+#### Execution Output Snapshot
+Below is the integrity audit trail captured during the execution of Phase 1.4:
+
+![Data Integrity Audit Output](Screenshot%20(344).png)
+
 > *"Empowering sustainable energy decisions through data-driven insight."*
 
