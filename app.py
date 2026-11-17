@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from pathlib import Path
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
@@ -15,7 +14,7 @@ st.set_page_config(
 # --- LOAD CLEANED DATA ---
 @st.cache_data
 def load_data():
-    # Loads our immutable parquet asset generated in Phase 1.7
+    # Loads our immutable parquet asset generated in Phase 1
     df = pd.read_parquet("cleaned_household_power.parquet")
     return df
 
@@ -69,21 +68,22 @@ elif page == "📈 Phase 2: Exploratory Data Analysis & Visualizations":
     st.markdown("### Module 2.3: Distribution Skewness & Hourly Resampled Trends")
     st.markdown("---")
 
-    # Interactive Controls
+    # Interactive Controls in Sidebar
     st.sidebar.markdown("### Chart Settings")
     show_kde = st.sidebar.checkbox("Show KDE Density Curve", value=True)
     bins_slider = st.sidebar.slider("Histogram Bins", min_value=10, max_value=100, value=50)
 
-    # Layout for plots
+    # Automatically identify active power column
+    power_col = next((col for col in ['Global_active_power', 'global_active_power'] if col in df.columns), df.columns[0])
+
+    # --- Figure A: Distribution & Skewness ---
     st.subheader("Figure 2.1: Global Active Power Distribution & Skewness Analysis")
     st.markdown("Reveals baseline idle clustering alongside a right-skewed long tail capturing high-draw residential peaks.")
     
-    fig, axes = plt.subplots(2, 1, figsize=(12, 10), dpi=300)
-    
-    # --- Figure A: Distribution & Skewness ---
-    # Ensure active power column exists (handling naming conventions)
-    power_col = 'Global_active_power' if 'Global_active_power' in df.columns else df.columns[2]
-    
+    # Configure Professional Style Guide & Subplots matching your tested script
+    plt.style.use('seaborn-v0_8-whitegrid' if 'seaborn-v0_8-whitegrid' in plt.style.available else 'default')
+    fig, axes = plt.subplots(2, 1, figsize=(14, 10), dpi=300)
+
     sns.histplot(
         df[power_col].dropna(), 
         kde=show_kde, 
@@ -92,14 +92,14 @@ elif page == "📈 Phase 2: Exploratory Data Analysis & Visualizations":
         bins=bins_slider, 
         stat='density'
     )
-    axes[0].set_title('Global Active Power Distribution & Skewness', fontsize=12, fontweight='bold')
-    axes[0].set_xlabel('Global Active Power (Kilowatts - kW)')
-    axes[0].set_ylabel('Density')
+    axes[0].set_title('Figure 2.1: Global Active Power Distribution & Skewness Analysis', fontsize=14, fontweight='bold', pad=15)
+    axes[0].set_xlabel('Global Active Power (Kilowatts - kW)', fontsize=11)
+    axes[0].set_ylabel('Density', fontsize=11)
     axes[0].annotate(
         'Right-skewed long tail\n(High-load residential peaks)', 
         xy=(4.0, 0.15), xytext=(5.5, 0.25),
         arrowprops=dict(facecolor='black', shrink=0.05, width=1, headwidth=6),
-        fontsize=9, fontweight='semibold'
+        fontsize=10, fontweight='semibold'
     )
 
     # --- Figure B: Temporal Resampling & Trend Analysis ---
@@ -107,18 +107,19 @@ elif page == "📈 Phase 2: Exploratory Data Analysis & Visualizations":
     st.subheader("Figure 2.2: Hourly Resampled Household Power Consumption Trend")
     st.markdown("Aggregating high-frequency telemetry to an hourly mean grain to isolate macro seasonality and data gaps.")
 
-    # Resample to hourly mean using the datetime index
+    print("Resampling time-series data to hourly grain...")
     df_hourly = df[power_col].resample('h').mean()
 
-    axes[1].plot(df_hourly.index, df_hourly.values, color='#ff7f0e', linewidth=0.7, alpha=0.85)
-    axes[1].set_title('Hourly Resampled Household Power Consumption Trend', fontsize=12, fontweight='bold')
-    axes[1].set_xlabel('Timeline (Datetime Grain: Hourly Mean)')
-    axes[1].set_ylabel('Active Power (kW)')
+    axes[1].plot(df_hourly.index, df_hourly.values, color='#ff7f0e', linewidth=0.8, alpha=0.85)
+    axes[1].set_title('Figure 2.2: Hourly Resampled Household Power Consumption Trend', fontsize=14, fontweight='bold', pad=15)
+    axes[1].set_xlabel('Timeline (Datetime Grain: Hourly Mean)', fontsize=11)
+    axes[1].set_ylabel('Active Power (kW)', fontsize=11)
 
+    # Overall layout polish
     plt.tight_layout()
     st.pyplot(fig)
 
     # Markdown Export Evidence Reference
     st.markdown("---")
     st.markdown("#### 📁 Repository Artifact Confirmation")
-    st.success("✅ Module 2.3 visualization artifact successfully generated and committed as `Screenshot (352).png` in the repository root.")
+    st.success("✅ Module 2.3 visualization pipeline successfully integrated and rendered inside Streamlit.")
