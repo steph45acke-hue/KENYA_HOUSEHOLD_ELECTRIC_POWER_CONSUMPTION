@@ -249,5 +249,29 @@ The execution output captured in the memory profiling benchmark reveals critical
 
 #### Execution Output Snapshot
 Below is the live memory benchmark and dtype optimization log captured during execution:
+### Module 2.3: Visualization Libraries, Chart Literacy, and Exploratory Telemetry Analysis
+
+To bridge raw data engineering pipelines with executive-ready decision-making, Module 2.3 establishes an institutional-grade visualization framework using `matplotlib` and `seaborn`. This module moves beyond basic plotting to enforce strict chart literacy standards: pairing distribution metrics with KDE skewness curves, handling continuous time-series resampling at hourly grain, and embedding explicit annotations to communicate both statistical findings and data caveats.
+
+#### 1. Architectural & Visual Design Standards
+- **Multi-Panel Analytical Layouts:** Designed synchronized subplots separating distribution density from temporal trajectories.
+- **Explicit SI Unit Labeling & Metadata:** Enforced standard metric units (Kilowatts - kW) and datetime grain annotations across all axes to eliminate ambiguity for stakeholders.
+- **Annotation & Caveat Integration:** Embedded explicit text callouts directly onto graphical canvases to highlight structural distribution tails and macro-trend volatility.
+
+#### 2. Deep-Dive Analysis of Visualization Output
+The generated output artifact captures two vital dimensions of the household electrical telemetry dataset:
+
+* **Figure 2.1: Global Active Power Distribution & Skewness Analysis**
+  - *Statistical Insight:* The histogram and Kernel Density Estimation (KDE) plot reveal a heavily right-skewed distribution. The primary concentration of residential power draw clusters tightly between $0.2\text{ kW}$ and $1.0\text{ kW}$, representing baseline idle and low-appliance loads.
+  - *The Long Tail & Business Meaning:* A pronounced positive skew extends past $4.0\text{ kW}$ and up to $10\text{ kW}$. As annotated on the chart, this long tail captures high-load residential peak events (such as heavy heating, water boiling, or multi-appliance concurrency), signaling critical capacity thresholds for local microgrid planning.
+
+* **Figure 2.2: Hourly Resampled Household Power Consumption Trend**
+  - *Temporal Mechanics:* High-frequency 1-minute telemetry was resampled to an hourly mean grain (`.resample('h').mean()`) to eliminate high-frequency noise while preserving macro-trend seasonality.
+  - *Trend & Anomaly Detection:* The timeline exposes pronounced seasonal shifts across the multi-year span (2007–2009), alongside visible data gaps and drops during mid-2008. This visual proof enables engineers to verify resampling integrity and isolate telemetry dropout windows prior to predictive modeling.
+
+#### 3. Execution Artifact & Visual Evidence
+Below is the production-ready visualization output generated from the pipeline and committed directly to the repository:
+
+![Module 2.3 Visualization Gallery - Distribution Skewness and Hourly Trends](output%201.png)
 
 ![Module 2.2 Memory Benchmark Output](Screenshot%20(351).png)
