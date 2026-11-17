@@ -175,7 +175,7 @@ This scorecard establishes an institutional **Data Quality Assurance (QA) framew
 
 ### Visual Evidence: Quality Scorecard & Pipeline Impact
 
-![Data Cleaning Quality Scorecard](cleaning_pipeline_quality_scorecard.jpg)
+![Data Cleaning Quality Scorecard](cleaning_pipeline_quality_scorecard.png)
 
 ---
 
