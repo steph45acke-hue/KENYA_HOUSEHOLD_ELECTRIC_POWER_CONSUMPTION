@@ -274,4 +274,4 @@ Below is the production-ready visualization output generated from the pipeline a
 
 ![Module 2.3 Visualization Gallery - Distribution Skewness and Hourly Trends](output%201.png)
 
-![Module 2.2 Memory Benchmark Output](Screenshot%20(351).png)
+
