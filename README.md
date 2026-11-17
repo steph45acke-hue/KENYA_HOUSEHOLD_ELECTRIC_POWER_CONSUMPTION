@@ -165,5 +165,45 @@ Below is the execution log verifying the successful completion of the master cle
 
 ![Phase 1.7 Master Cleaning Pipeline Output](Screenshot%20(348).png)
 
+### Executive Summary: Data Cleaning & Telemetry Quality Scorecard
+
+In enterprise data science and smart grid infrastructure, deploying machine learning forecasting models or capacity-planning algorithms on raw, unvalidated telemetry introduces severe risks—ranging from phantom load errors and skewed rolling averages to model collapse caused by timestamp duplicates and sensor drift. 
+
+This scorecard establishes an institutional **Data Quality Assurance (QA) framework** for Kenyan household electrical telemetry. By applying a **"Do No Harm" engineering methodology**, we transformed raw, high-frequency smart meter logs into an enterprise-ready, immutable Apache Parquet asset without destroying valid residential usage peaks or introducing artificial bias.
+
+---
+
+### Visual Evidence: Quality Scorecard & Pipeline Impact
+
+![Data Cleaning Quality Scorecard](cleaning_pipeline_quality_scorecard.jpg)
+
+---
+
+### Comprehensive Breakdown of Business Solutions & Visual Insights
+
+#### 1. Cleaning Impact Waterfall (Row Counts & Ingestion Integrity)
+* **The Business Problem:** Raw IoT and smart-meter streams frequently suffer from systemic data loss, transmission packet duplication, and incomplete logging blocks that corrupt aggregations.
+* **The Solution:** We tracked the exact lifecycle of every record across four rigorous processing gates:
+  1. **Raw Ingested:** Initial ingestion stream capturing raw multi-sensor telemetry.
+  2. **After Null Drop:** Removal of invalid timestamp anomalies and unrecoverable null blocks.
+  3. **After Deduplication:** Elimination of **80,281 exact duplicate rows** and timestamp index collisions to ensure strict temporal uniqueness.
+  4. **Final Cleaned:** A pristine, high-integrity dataset of **968,294 rows** optimized for downstream time-series forecasting.
+* **Business Impact:** Prevents double-counting of power consumption metrics, ensuring financial and billing audits reconcile with absolute mathematical precision.
+
+#### 2. Outlier Proportion Ratio ($3.0 \times IQR$ Robust Fencing)
+* **The Business Problem:** Standard automated pipelines use aggressive $1.5 \times IQR$ fences or blind deletion, which mistakenly flags heavy legitimate appliance usage (e.g., electric water heaters, heavy cookers) as "errors" and deletes critical high-load training data.
+* **The Solution:** We deployed a conservative **$3.0 \times IQR$ upper fence**, separating normal household baseline fluctuations from extreme sensor anomalies while **preserving raw values** and appending a binary tracking flag (`Outlier_Flag_Extreme`).
+* **Business Impact:** The chart proves that **99.3%** of records represent normal operational load, while only **0.7%** are flagged as extreme anomalies[cite: 5]. This guarantees that our machine learning models retain peak load behavior without being distorted by erratic spikes.
+
+#### 3. Energy Distribution Analysis ($\text{Wh/min}$)
+* **The Business Problem:** Raw telemetry provides instantaneous active power in kilowatts ($kW$). Directly summing or averaging $kW$ across intervals leads to fundamental unit errors and distorted energy billing models.
+* **The Solution:** We standardized electrical units by converting instantaneous power into interval energy ($\text{Wh/min} = \frac{\text{kW} \times 1000}{60}$) and cross-audited sub-metering circuit reconciliation.
+* **Business Impact:** Establishes a unimodal, right-skewed energy distribution typical of residential consumption profiles, verifying that baseline household power consumption clusters safely within expected physical boundaries.
+
+#### 4. Extreme Outliers Concentration by Hour (Behavioral Profiling)
+* **The Business Problem:** Are extreme spikes caused by sensor malfunctions (which happen randomly across time), or do they reflect actual human behavior and household routines?
+* **The Solution:** Grouping extreme outliers by hour of the day ($0–23$) revealed a massive concentration during **Hours 19, 20, and 21 (7:00 PM – 9:00 PM)**, peaking near **1,000 extreme occurrences**[cite: 5].
+* **Business Impact:** This proves that extreme power events are **not sensor errors**, but rather structural human activity patterns (residents returning home, simultaneously powering cooking appliances, lighting, and entertainment systems). Understanding this temporal clustering allows utility providers and predictive models to accurately forecast evening peak-load grid demands.
+
 > *"Empowering sustainable energy decisions through data-driven insight."*
 
