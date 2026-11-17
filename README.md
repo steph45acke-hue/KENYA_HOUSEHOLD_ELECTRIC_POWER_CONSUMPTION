@@ -117,5 +117,19 @@ Below is the integrity audit trail captured during the execution of Phase 1.4:
 
 ![Data Integrity Audit Output](Screenshot%20(344).png)
 
+### Phase 1.5: Outlier Detection, Investigation, and Temporal Profiling
+
+To prevent the destruction of valid high-load events, Phase 1.5 deployed a robust `3.0 * IQR` upper-fence policy alongside behavioral and temporal profiling.
+
+#### Key Findings & Insights
+* **Distribution Fences:** Established a baseline $Q_1$ of **0.312 kW**[cite: 2] and $Q_3$ of **1.608 kW** ($IQR = 1.296$ kW)[cite: 2], isolating extreme values safely above conservative upper bounds.
+* **Behavioral Validation:** Isolated peak extreme outlier counts at **Hour 21 (9:00 PM)** (logging **866 extreme events**)[cite: 2], confirming that structural power spikes map directly to household evening routines (e.g., cooking, heating, high-draw appliances) rather than equipment malfunction.
+* **Integrity Safeguard:** Retained raw telemetry values intact while logging binary outlier indicators (`Outlier_Flag_Extreme`), ensuring reproducible modeling and unbiased forecasting sensitivity audits.
+
+#### Execution Output Snapshot
+Below is the execution log verifying the Phase 1.5 statistical metrics and peak hour concentration:
+
+![Outlier Detection Output](Screenshot%20(346).png)
+
 > *"Empowering sustainable energy decisions through data-driven insight."*
 
