@@ -205,5 +205,21 @@ This scorecard establishes an institutional **Data Quality Assurance (QA) framew
 * **The Solution:** Grouping extreme outliers by hour of the day ($0–23$) revealed a massive concentration during **Hours 19, 20, and 21 (7:00 PM – 9:00 PM)**, peaking near **1,000 extreme occurrences**[cite: 5].
 * **Business Impact:** This proves that extreme power events are **not sensor errors**, but rather structural human activity patterns (residents returning home, simultaneously powering cooking appliances, lighting, and entertainment systems). Understanding this temporal clustering allows utility providers and predictive models to accurately forecast evening peak-load grid demands.
 
+### Module 2.1: Core Python and Professional Project Engineering
+
+To transition from ad-hoc notebook scripting to institutional software engineering standards, Module 2.1 establishes a rigorous project architecture. This framework decouples file paths from specific hardware environments, standardizes event logging, and lays the foundation for reusable Python modules.
+
+#### Architectural & Engineering Highlights
+* **Machine-Independent Path Resolution:** Utilized Python’s native `pathlib` library (`Path().resolve()`) to dynamically compute absolute project directories, ensuring cross-platform compatibility across Windows, macOS, and Linux without fragile hardcoded paths.
+* **Centralized Logging Framework:** Replaced standard `print()` statements with a professional `logging` configuration capturing timestamps (`%(asctime)s`), log levels (`INFO`), logger namespaces (`PowerTelemetryPipeline`), and formatted execution streams.
+* **Modular Pipeline Design:** Structured core utilities into dedicated source modules (`src/`) to enforce separation of concerns between raw ingestion, cleaning logic, and downstream analytics.
+
+#### Execution Lineage & Runtime Output
+Below is the runtime verification log confirming successful logger initialization and dynamic path resolution:
+
+```text
+2026-11-17 06:41:55,508 [INFO] PowerTelemetryPipeline: Project root established at: C:\Users\USER\OneDrive\New folder\Desktop\KENYA_HOUSEHOLD_ELECTRIC_POWER_CONSUMPTION
+2026-11-17 06:41:55,513 [INFO] PowerTelemetryPipeline: Data directory located at: C:\Users\USER\OneDrive\New folder\Desktop\KENYA_HOUSEHOLD_ELECTRIC_POWER_CONSUMPTION\data
+
 > *"Empowering sustainable energy decisions through data-driven insight."*
 
