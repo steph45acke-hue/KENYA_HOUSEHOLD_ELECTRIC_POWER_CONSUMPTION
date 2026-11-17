@@ -221,5 +221,37 @@ Below is the runtime verification log confirming successful logger initializatio
 2026-11-17 06:41:55,508 [INFO] PowerTelemetryPipeline: Project root established at: C:\Users\USER\OneDrive\New folder\Desktop\KENYA_HOUSEHOLD_ELECTRIC_POWER_CONSUMPTION
 2026-11-17 06:41:55,513 [INFO] PowerTelemetryPipeline: Data directory located at: C:\Users\USER\OneDrive\New folder\Desktop\KENYA_HOUSEHOLD_ELECTRIC_POWER_CONSUMPTION\data
 
+---
+
+## ⚡ Module 2.1: Modular Ingestion & Timestamp Parsing Architecture
+
+To transition away from monolithic, ad-hoc scripts, Module 2.1 encapsulates core data engineering operations into robust, typed, and exception-handled Python functions. This guarantees that raw smart-meter payloads are ingested safely, validated strictly, and time-indexed consistently.
+
+### 🛠️ Engineering Function Specifications
+
+1. **`load_telemetry_data(file_path: Path) -> pd.DataFrame`**
+   * **Path Validation:** Validates file existence using `pathlib` prior to execution.
+   * **Robust Parsing:** Handles semicolon-delimited CSV payloads (`sep=';'`), automatically mapping unknown value markers (`?`) to standard nulls (`NaN`).
+   * **Fallback Engine:** Incorporates an automatic fallback CSV sniffer mechanism.
+   * **Exception Safety:** Employs structured `try/except` blocks with `logging.critical` severity capture.
+
+2. **`parse_timestamps(df: pd.DataFrame) -> pd.DataFrame`**
+   * **String Concatenation:** Combines raw `Date` and `Time` text columns into a single unified timestamp string.
+   * **Vectorized Conversion:** Utilizes `pd.to_datetime` with explicit format matching (`%d/%m/%Y %H:%M:%S`) and error coercion (`errors='coerce'`).
+   * **Index Transformation:** Promotes the resulting `DateTime` column to an immutable pandas index and purges redundant raw text columns.
+
+---
+
+### 📊 Execution Lineage & Runtime Output
+![Description of Image](Screenshot%20(350).png)
+
+The live verification log below confirms the successful, high-performance ingestion of **1,048,575 raw records** and subsequent datetime indexing:
+
+```text
+2026-11-17 06:51:17,752 [INFO] PowerTelemetryPipeline: Ingesting raw telemetry from household_power_consumption.csv...
+2026-11-17 06:51:45,457 [INFO] PowerTelemetryPipeline: Successfully ingested 1,048,575 raw records.
+2026-11-17 06:51:45,459 [INFO] PowerTelemetryPipeline: Parsing timestamps and setting datetime index...
+2026-11-17 06:51:57,482 [INFO] PowerTelemetryPipeline: Pipeline test execution successful. Current shape: (1048575, 7)
+
 > *"Empowering sustainable energy decisions through data-driven insight."*
 
