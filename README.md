@@ -205,53 +205,29 @@ This scorecard establishes an institutional **Data Quality Assurance (QA) framew
 * **The Solution:** Grouping extreme outliers by hour of the day ($0–23$) revealed a massive concentration during **Hours 19, 20, and 21 (7:00 PM – 9:00 PM)**, peaking near **1,000 extreme occurrences**[cite: 5].
 * **Business Impact:** This proves that extreme power events are **not sensor errors**, but rather structural human activity patterns (residents returning home, simultaneously powering cooking appliances, lighting, and entertainment systems). Understanding this temporal clustering allows utility providers and predictive models to accurately forecast evening peak-load grid demands.
 
-### Module 2.1: Core Python and Professional Project Engineering
+### Module 2.1: Core Python and Project Engineering Architecture
 
-To transition from ad-hoc notebook scripting to institutional software engineering standards, Module 2.1 establishes a rigorous project architecture. This framework decouples file paths from specific hardware environments, standardizes event logging, and lays the foundation for reusable Python modules.
+To transition away from monolithic, ad-hoc notebook scripting toward professional software engineering standards, Module 2.1 establishes a reproducible project structure, decouples execution paths from local hardware environments, and encapsulates core data operations into robust, typed, and exception-handled Python functions.
 
-#### Architectural & Engineering Highlights
-* **Machine-Independent Path Resolution:** Utilized Python’s native `pathlib` library (`Path().resolve()`) to dynamically compute absolute project directories, ensuring cross-platform compatibility across Windows, macOS, and Linux without fragile hardcoded paths.
-* **Centralized Logging Framework:** Replaced standard `print()` statements with a professional `logging` configuration capturing timestamps (`%(asctime)s`), log levels (`INFO`), logger namespaces (`PowerTelemetryPipeline`), and formatted execution streams.
-* **Modular Pipeline Design:** Structured core utilities into dedicated source modules (`src/`) to enforce separation of concerns between raw ingestion, cleaning logic, and downstream analytics.
+#### Key Architectural Highlights & Specifications
+- **Cross-Platform Pathing:** Utilized Python’s native `pathlib` library (`Path().resolve()`) to dynamically compute absolute project directories, ensuring seamless cross-platform compatibility across Windows, macOS, and Linux without fragile hardcoded paths.
+- **Centralized Logging Framework:** Replaced standard `print()` statements with a configured `logging` pipeline (`PowerTelemetryPipeline`) capturing precise timestamps, severity levels (`INFO`), and execution states.
+- **Modular Ingestion (`load_telemetry_data`):** Validates file existence prior to execution, safely handles semicolon-delimited CSV payloads (`sep=';'`), maps unknown value markers (`?`) to standard nulls (`NaN`), and incorporates structured `try/except` exception safety with critical error reporting.
+- **Vectorized Timestamp Parsing (`parse_timestamps`):** Combines raw `Date` and `Time` string columns into a unified datetime series (`%d/%m/%Y %H:%M:%S`) with error coercion (`errors='coerce'`), promotes `DateTime` to an immutable DataFrame index, and purges redundant raw text columns.
 
-#### Execution Lineage & Runtime Output
-Below is the runtime verification log confirming successful logger initialization and dynamic path resolution:
+#### Detailed Explanation of Execution Output & Logs
+The terminal outputs captured during runtime validate three critical pillars of institutional software engineering:
+1. **Absolute Traceability & Transparency:** The logging framework timestamps every execution phase down to the millisecond (`[INFO]`), providing clear visibility into file system lookups and ingestion progress without relying on opaque `print()` statements.
+2. **Mass-Scale Memory Handling:** The `load_telemetry_data` function successfully ingests **1,048,575 raw records** from the high-frequency smart meter dataset in seconds, handling semicolon boundaries and missing-value flags safely without buffer overflows.
+3. **Time-Series Index Readiness:** The execution shape verification `(1048575, 7)` confirms that raw text columns were successfully transformed into a vectorized, immutable Datetime Index, establishing the exact temporal grid required for advanced modeling and forecasting pipelines.
 
-```text
-2026-11-17 06:41:55,508 [INFO] PowerTelemetryPipeline: Project root established at: C:\Users\USER\OneDrive\New folder\Desktop\KENYA_HOUSEHOLD_ELECTRIC_POWER_CONSUMPTION
-2026-11-17 06:41:55,513 [INFO] PowerTelemetryPipeline: Data directory located at: C:\Users\USER\OneDrive\New folder\Desktop\KENYA_HOUSEHOLD_ELECTRIC_POWER_CONSUMPTION\data
+#### Execution Output Snapshots
+Below are the runtime verification logs capturing environment initialization, logging setup, and high-performance ingestion:
 
----
+##### 1. Environment & Logger Initialization
+![Module 2.1 Environment and Logging Setup](Screenshot%20(349).png)
 
-## ⚡ Module 2.1: Modular Ingestion & Timestamp Parsing Architecture
-
-To transition away from monolithic, ad-hoc scripts, Module 2.1 encapsulates core data engineering operations into robust, typed, and exception-handled Python functions. This guarantees that raw smart-meter payloads are ingested safely, validated strictly, and time-indexed consistently.
-
-### 🛠️ Engineering Function Specifications
-
-1. **`load_telemetry_data(file_path: Path) -> pd.DataFrame`**
-   * **Path Validation:** Validates file existence using `pathlib` prior to execution.
-   * **Robust Parsing:** Handles semicolon-delimited CSV payloads (`sep=';'`), automatically mapping unknown value markers (`?`) to standard nulls (`NaN`).
-   * **Fallback Engine:** Incorporates an automatic fallback CSV sniffer mechanism.
-   * **Exception Safety:** Employs structured `try/except` blocks with `logging.critical` severity capture.
-
-2. **`parse_timestamps(df: pd.DataFrame) -> pd.DataFrame`**
-   * **String Concatenation:** Combines raw `Date` and `Time` text columns into a single unified timestamp string.
-   * **Vectorized Conversion:** Utilizes `pd.to_datetime` with explicit format matching (`%d/%m/%Y %H:%M:%S`) and error coercion (`errors='coerce'`).
-   * **Index Transformation:** Promotes the resulting `DateTime` column to an immutable pandas index and purges redundant raw text columns.
+##### 2. Modular Ingestion & Datetime Indexing Output
+![Module 2.1 Runtime Verification & Execution Logs](Screenshot%20(350).png)
 
 ---
-
-### 📊 Execution Lineage & Runtime Output
-![Description of Image](Screenshot%20(350).png)
-
-The live verification log below confirms the successful, high-performance ingestion of **1,048,575 raw records** and subsequent datetime indexing:
-
-```text
-2026-11-17 06:51:17,752 [INFO] PowerTelemetryPipeline: Ingesting raw telemetry from household_power_consumption.csv...
-2026-11-17 06:51:45,457 [INFO] PowerTelemetryPipeline: Successfully ingested 1,048,575 raw records.
-2026-11-17 06:51:45,459 [INFO] PowerTelemetryPipeline: Parsing timestamps and setting datetime index...
-2026-11-17 06:51:57,482 [INFO] PowerTelemetryPipeline: Pipeline test execution successful. Current shape: (1048575, 7)
-
-> *"Empowering sustainable energy decisions through data-driven insight."*
-
