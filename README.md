@@ -130,6 +130,19 @@ To prevent the destruction of valid high-load events, Phase 1.5 deployed a robus
 Below is the execution log verifying the Phase 1.5 statistical metrics and peak hour concentration:
 
 ![Outlier Detection Output](Screenshot%20(346).png)
+### Phase 1.6: Electrical Consistency, Unit Conversions, and Derived Measures
+
+Phase 1.6 translated raw kilowatt metrics into standardized interval-safe energy totals and audited the household sub-metering reconciliation balance across the 1-minute telemetry stream.
+
+#### Key Engineering Findings & Metrics
+* **Energy Unit Conversion:** Successfully converted instantaneous active power into interval energy, recording a mean derived active energy of **19.57 Wh/min** across **968,294 valid records**[cite: 3].
+* **Sub-Metering Reconciliation:** Compared total energy against explicit sub-meter circuits (mean sum of **9.17 Wh/min**)[cite: 3] to isolate unmeasured residual loads (Sub-metering 4).
+* **Residual Sanity Audit:** Detected only **935 negative residual anomalies (0.10%)**[cite: 3], confirming exceptional internal consistency well within acceptable multi-phase residential meter rounding limits.
+
+#### Execution Output Snapshot
+Below is the verification log capturing the Phase 1.6 derivation and reconciliation metrics:
+
+![Electrical Consistency Audit Output](Screenshot%20(347).png)
 
 > *"Empowering sustainable energy decisions through data-driven insight."*
 
