@@ -143,6 +143,27 @@ Phase 1.6 translated raw kilowatt metrics into standardized interval-safe energy
 Below is the verification log capturing the Phase 1.6 derivation and reconciliation metrics:
 
 ![Electrical Consistency Audit Output](Screenshot%20(347).png)
+### Phase 1.7: Automated Cleaning Pipeline, Quality Gates, and Parquet Export
+
+The final phase of the data understanding and cleaning module engineered an idempotent, modular Python pipeline. This pipeline orchestrates Phases 1.2 through 1.6 into a single end-to-end execution stream, enforcing strict automated quality gates and serializing the results into high-performance columnar storage.
+
+#### Pipeline Architecture & Transformation Lineage
+* **Modular & Idempotent Execution:** Designed to be rerun seamlessly from raw CSV inputs without state corruption or duplicate index collisions.
+* **Automated Quality Gates:** Programmatically enforced strict assertions verifying temporal monotonicity (`is_monotonic_increasing == True`) and physical sensor safety limits (`Voltage > 0`).
+* **Optimized Columnar Storage:** Serialized the final validated dataset into an industry-standard **Apache Parquet** file (`cleaned_household_power.parquet`) using snappy compression for rapid downstream data science and modeling workflows.
+
+#### Execution Lineage Summary
+* **Raw Input Rows:** 1,048,575 records ingested[cite: 4]
+* **Rows After Datetime Parse:** 1,048,575 records[cite: 4]
+* **Missing Gaps Flagged & Treated:** 4,069 gaps isolated and interpolated[cite: 4]
+* **Exact Duplicates Removed:** 80,281 duplicate records stripped[cite: 4]
+* **Final Cleaned Rows Retained:** 968,294 records[cite: 4]
+* **Extreme Outliers Flagged:** 6,996 high-load anomalies tagged with raw values preserved[cite: 4]
+
+#### Pipeline Execution Output Snapshot
+Below is the execution log verifying the successful completion of the master cleaning pipeline, quality gates, and Parquet export:
+
+![Phase 1.7 Master Cleaning Pipeline Output](Screenshot%20(348).png)
 
 > *"Empowering sustainable energy decisions through data-driven insight."*
 
