@@ -231,3 +231,23 @@ Below are the runtime verification logs capturing environment initialization, lo
 ![Module 2.1 Runtime Verification & Execution Logs](Screenshot%20(350).png)
 
 ---
+### Module 2.2: NumPy, Pandas, and Efficient Computation
+
+To scale data pipelines beyond ad-hoc scripting, Module 2.2 transitions our architecture into high-performance, memory-optimized computation. This phase masters hardware-level vectorization, vectorized time-series resampling, leakage-free rolling windows, and rigorous memory profiling to eliminate RAM bottlenecks when processing large-scale telemetry.
+
+#### Key Architectural Focus & Trade-Offs
+- **Vectorized Operations vs. Python Loops:** Bypassed slow, row-by-row Python interpreter `for` loops by leveraging contiguous memory arrays and compiled C-routines via NumPy and Pandas vectorization.
+- **`groupby` vs. `resample` Mechanics:** Utilized categorical `groupby` for discrete attribute partitioning while deploying specialized temporal `resample` engines for continuous time-series frequency conversion and automated bin filling.
+- **Leakage Prevention in Windows:** Enforced strict chronological sorting, historical shifting (`.shift(1)`), and bounded window configurations (`closed='left'`) to prevent future data leakage in rolling calculations.
+- **Memory Profiling & Dtype Optimization:** Audited RAM allocation across data types, demonstrating how object-dtype string overhead and float precision choices impact large-scale memory footprints.
+
+#### Detailed Explanation of Memory Benchmark Output
+The execution output captured in the memory profiling benchmark reveals critical insights into dataframe memory allocation:
+1. **Initial Memory Baseline:** Loading the raw telemetry dataset established a base memory footprint of **53.03 MB**. 
+2. **Dtype Profiling & Allocation Reality:** While downcasting continuous numerical variables from `float64` to `float32` cuts numeric precision storage in half, the output demonstrates that string-based `object` dtypes (such as raw `Date` and `Time` columns prior to datetime parsing) often dominate the initial RAM overhead. 
+3. **Engineering Takeaway:** True memory optimization in large-scale data engineering requires a combined strategy: downcasting numerical arrays *alongside* converting repetitive string columns into efficient `category` dtypes and parsing temporal fields into datetime indexes.
+
+#### Execution Output Snapshot
+Below is the live memory benchmark and dtype optimization log captured during execution:
+
+![Module 2.2 Memory Benchmark Output](Screenshot%20(351).png)
