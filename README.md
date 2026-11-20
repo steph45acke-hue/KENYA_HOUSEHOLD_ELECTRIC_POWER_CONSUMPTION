@@ -275,3 +275,43 @@ Below is the production-ready visualization output generated from the pipeline a
 ![Module 2.3 Visualization Gallery - Distribution Skewness and Hourly Trends](output%201.png)
 
 
+### Module 2.4: Correlation Matrices, Multi-Collinearity Diagnostics, and Feature Engineering
+
+Raw electrical telemetry often contains redundant signals, physical constraints, and subtle load-voltage interactions that can distort statistical models or cause severe multi-collinearity in linear and regression-based forecasting. Module 2.4 pairs cyclical time-based feature engineering (`Hour`, `Month`, `DayOfWeek`, `Is_Weekend`) with a Pearson correlation matrix to diagnose feature relationships, validate electrical physics, and guide smart feature selection before modeling[cite: 2].
+
+---
+
+#### 1. The Engineering Problem & Why Correlation Analysis Matters
+When building predictive load or energy-consumption models from smart-meter telemetry, feeding every numeric column blindly into a model creates two major problems:
+1. **Redundancy & Multi-Collinearity:** Variables driven by the same underlying physical process can carry nearly identical information, inflating variance in linear models and obscuring true feature importance.
+2. **Misinterpreting Grid & Appliance Behavior:** Without checking how sub-circuits and line voltage respond to rising household demand, analysts risk mistaking normal voltage sag or independent appliance cycles for sensor faults or anomalies[cite: 2].
+
+---
+
+#### 2. Deep-Dive Output Analysis: Why the Numbers Look This Way
+
+##### A. Near-Perfect Coupling Between `Global_active_power` and `Global_intensity` ($r = 1.00$ rounded)
+* **What the Matrix Shows:** `Global_active_power` and `Global_intensity` display a correlation of `1.00` (at two-decimal precision)[cite: 2].
+* **Why This Happens (Physical & Statistical Reason):** Active electrical power ($P$) is directly governed by current ($I$) and voltage ($V$) ($P = V \cdot I \cdot \cos\theta$). Because household supply voltage stays within a relatively narrow operating band compared to wide swings in appliance current, current (`Global_intensity`) tracks `Global_active_power` almost lockstep.
+* **Modeling Solution:** Using both `Global_active_power` and `Global_intensity` simultaneously as predictors creates strong multi-collinearity. In forecasting or regression tasks, retain the target/primary load metric and avoid redundant collinear inputs unless regularized or dimensionally reduced.
+
+##### B. Sub-Metering Drivers: Why `Sub_metering_3` Leads ($r = 0.61$) While Sub-Meters Stay Independent ($r \approx 0.06\text{--}0.11$)
+* **What the Matrix Shows:** Among the three sub-metered zones, `Sub_metering_3` has the strongest linear relationship with `Global_active_power` ($r = 0.61$), followed by `Sub_metering_1` ($r = 0.48$) and `Sub_metering_2` ($r = 0.46$)[cite: 2]. Meanwhile, correlations *between* `Sub_metering_1`, `Sub_metering_2`, and `Sub_metering_3` are all weak (`0.06` to `0.11`)[cite: 2].
+* **Why This Happens (Behavioral & Circuit Reason):** Heavy fixed loads (such as water heating, climate/space conditioning, or major continuous circuits represented by sub-meter 3) account for a large share of total kW draw when active. Conversely, different household zones are used at different times or for distinct tasks rather than turning on identically together, keeping cross-sub-meter linear correlation low.
+* **Modeling Solution:** Each sub-meter captures distinct appliance/zone behavior and adds complementary signal rather than duplicating another sub-meter—making sub-meter aggregates and lagged values useful features for peak-load profiling.
+
+##### C. Negative Correlation with `Voltage` ($r = -0.40$ with `Global_active_power`, $-0.41$ with `Global_intensity`)
+* **What the Matrix Shows:** `Voltage` correlates negatively with `Global_active_power` ($r = -0.40$) and `Global_intensity` ($r = -0.41$), and mildly negatively with the sub-meters ($-0.18$ to $-0.28$)[cite: 2].
+* **Why This Happens (Grid Load & Voltage Drop Reason):** In real distribution networks with non-zero line impedance, heavier current draw across feeders and household circuits increases voltage drop along the line, causing measured voltage to dip slightly during high-load periods.
+* **Modeling Solution:** A moderate negative correlation with voltage is physically expected during heavy demand—it is a real grid load effect, not automatically a data-cleaning error. Including `Voltage` alongside demand/time features helps models distinguish high-load stress periods from quiet baseline periods.
+
+##### D. Weak Link with `Global_reactive_power` ($r = 0.21$ with `Global_active_power`)
+* **What the Matrix Shows:** `Global_reactive_power` shows only a modest positive correlation (`0.21`) with `Global_active_power` and near-zero correlation (`0.04`) with `Sub_metering_3`[cite: 2].
+* **Why This Happens:** Reactive power reflects phase shift from inductive/capacitive loads rather than real energy transferred for work, so active kW and reactive kVAR do not scale identically across all household appliances.
+* **Modeling Solution:** Keep `Global_reactive_power` as a separate diagnostic signal for power-quality/inductive-load context rather than assuming it moves proportionally with active power.
+
+---
+
+#### 3. Visual Artifact: Telemetry Feature Correlation Matrix
+
+![Figure 2.3: Telemetry Feature Correlation Matrix](correlation_matrix_heatmap.png)
