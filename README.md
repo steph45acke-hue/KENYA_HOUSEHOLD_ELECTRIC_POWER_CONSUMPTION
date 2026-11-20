@@ -315,3 +315,28 @@ When building predictive load or energy-consumption models from smart-meter tele
 #### 3. Visual Artifact: Telemetry Feature Correlation Matrix
 
 ![Figure 2.3: Telemetry Feature Correlation Matrix](correlation_matrix_heatmap.png)
+
+### Phase 3, Section 3.1: Descriptive Statistics Setup & Feature Enrichment (`03_1_descriptive_statistics_and_load_profiles.ipynb`)
+
+Before computing formal descriptive statistics, probability distributions, and conditional load profiles, raw telemetry records need structured temporal context and consistent load-tier labels. In `03_1_descriptive_statistics_and_load_profiles.ipynb`, the cleaned Parquet dataset is loaded, chronologically indexed, enriched with calendar/time features, and segmented into quartile-based load regimes[cite: 2].
+
+---
+
+#### 1. Problem Solved by This Initialization Step
+1. **Chronological & Type Consistency:** Reading from the cleaned Parquet pipeline preserves high-volume telemetry (`968,294` rows across `18` columns) while ensuring timestamps are sorted along a `DatetimeIndex` and active power (`Global_active_power`) is numeric[cite: 2].
+2. **Actionable Grouping Dimensions:** Extracting `Hour`, `DayOfWeek`, `Weekday_Name`, `Month`, and `Month_Name` enables direct comparison across daily demand cycles, weekdays vs. weekends, and seasonal shifts[cite: 2].
+3. **Quantile Load Regimes (`Load_Regime`):** Partitioning active power into four equal-frequency quartile tiers (`Q1: Low/Idle`, `Q2: Moderate`, `Q3: Elevated`, and `Q4: Peak Draw`) establishes a clear baseline for comparing baseline idle behavior against high-demand draw periods[cite: 2].
+
+---
+
+#### 2. Output Walkthrough & Engineering Interpretation
+From the executed notebook cell[cite: 2]:
+* **Dataset Scale & Target Column:** The DataFrame loads with shape `(968294, 18)` and resolves `'Global_active_power'` as the primary target telemetry column in `17.4s`[cite: 2].
+* **Sample Evening Peak Observations:** The preview table shows Saturday evening readings around `17:24`–`17:28` in `Dec` (`2006-12-16`) with `Global_active_power` values between `3.666` and `5.388` kW—all automatically classified under `Q4: Peak Draw`[cite: 2].
+* **Why This Matters for Downstream Analysis:** Labeling observations by `Hour` and `Load_Regime` upfront prevents mixing quiet overnight draws with heavy evening/weekend demand spikes when summarizing central tendency, spread, skewness, and tail behavior[cite: 2].
+
+---
+
+#### 3. Visual Evidence: Notebook Execution & Feature Preview
+
+![Section 3.1 Setup and Output Preview in VS Code](Screenshot%20(353).png)
