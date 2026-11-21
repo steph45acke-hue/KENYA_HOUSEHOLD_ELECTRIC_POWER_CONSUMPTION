@@ -340,3 +340,48 @@ From the executed notebook cell[cite: 2]:
 #### 3. Visual Evidence: Notebook Execution & Feature Preview
 
 ![Section 3.1 Setup and Output Preview in VS Code](Screenshot%20(353).png)
+
+### Phase 3, Section 3.1 (Step 2): Baseline Descriptive Statistics & Distribution Shape (`Global_active_power`)
+
+Raw household power series often look deceptively simple when summarized by a single average, yet electrical load demand is shaped by idle baselines, intermittent heavy appliances, and high-draw spikes[cite: 3]. Step 2 computes a complete baseline statistical profile across `967,828` valid `Global_active_power` observations to establish typical demand, spread, asymmetry, and tail behavior[cite: 3].
+
+---
+
+#### 1. Problem Solved & Analytical Purpose
+1. **Avoiding Single-Metric Distortion:** Relying only on the mean can overstate typical household draw when high-power spikes pull the average upward[cite: 3].
+2. **Quantifying Real Spread vs. Extreme Spikes:** Comparing parametric spread (`Std Deviation`, `Variance`, `Range`) against resistant/robust spread (`IQR`, `MAD` around median) separates routine fluctuations from peak events[cite: 3].
+3. **Diagnosing Distribution Shape Before Modeling:** Measuring `Skewness`, `Excess Kurtosis`, `Pearson Kurtosis`, and `Coefficient of Variation (CV)` tells us whether load data is symmetric or skewed and how heavily tails behave before building forecasts or load regimes[cite: 3].
+
+---
+
+#### 2. Output Breakdown & Why the Numbers Behave This Way
+
+| Metric | Value | Analytical Meaning |
+| :--- | :--- | :--- |
+| **Count (Valid)** | `967828.0000`[cite: 3] | Non-null active power observations evaluated[cite: 3]. |
+| **Mean** | `1.1744`[cite: 3] | Arithmetic average active power[cite: 3]. |
+| **Median (Q2)** | `0.6880`[cite: 3] | Middle (50th percentile) active power; typical routine draw[cite: 3]. |
+| **Mode (1st)** | `0.3220`[cite: 3] | Most frequent single active power reading[cite: 3]. |
+| **Min / Max / Range** | `0.0760` / `10.6700` / `10.5940`[cite: 3] | Full observed span from near-idle draw to peak load[cite: 3]. |
+| **Q1 (25th) / Q3 (75th)** | `0.3120` / `1.6080`[cite: 3] | Bounds of the middle 50% of observations[cite: 3]. |
+| **IQR (`Q3 - Q1`)** | `1.2960`[cite: 3] | Interquartile spread across the central half of the data[cite: 3]. |
+| **Variance / Std Deviation** | `1.3096` / `1.1444`[cite: 3] | Overall dispersion around the mean (`ddof=1`)[cite: 3]. |
+| **MAD (Mean / Median)** | `0.8801` / `0.4880`[cite: 3] | Average absolute deviation from mean vs. median absolute deviation[cite: 3]. |
+| **Skewness** | `1.7022`[cite: 3] | Strong positive (right) skew[cite: 3]. |
+| **Excess / Pearson Kurtosis** | `3.5745` / `6.5745`[cite: 3] | Leptokurtic (heavy upper tail / sharp peak relative to normal)[cite: 3]. |
+| **Coeff. of Variation (CV)** | `0.9745`[cite: 3] | Standard deviation is nearly equal (`~97.5%`) to the mean[cite: 3]. |
+| **95th / 99th Percentile** | `3.5700` / `5.1680`[cite: 3] | High-demand thresholds reached in the top 5% and top 1% of intervals[cite: 3]. |
+
+##### Why Mean (`1.1744`) Is Much Higher Than Median (`0.6880`) and Mode (`0.3220`)
+* **Reason:** Household electricity usage has a natural floor near low/idle consumption (`Min = 0.0760`, `Mode = 0.3220`, `Median = 0.6880`), while high-wattage appliances and peak periods push readings up to `10.6700`[cite: 3]. Because the arithmetic mean weights every value linearly, those upper-tail spikes pull the mean (`1.1744`) well above the median (`0.6880`), producing a positive skewness of `1.7022`[cite: 3].
+* **Solution:** Use the **median** (`0.6880`) and **IQR** (`1.2960`) / **median MAD** (`0.4880`) to represent typical day-to-day baseline load, while keeping the **mean**, **95th percentile** (`3.5700`), and **99th percentile** (`5.1680`) in mind for capacity and peak-load planning[cite: 3].
+
+##### Why Kurtosis (`Excess = 3.5745`, `Pearson = 6.5745`) and CV (`0.9745`) Are High
+* **Reason:** A normal distribution has `Excess Kurtosis = 0` (`Pearson = 3`). Values of `3.5745` and `6.5745` confirm heavier tails and sharper concentration/peakedness than a Gaussian curve—consistent with frequent low-to-moderate baseline intervals punctuated by concentrated bursts of heavy appliance draw[cite: 3]. A `CV` of `0.9745` further shows that dispersion is large relative to average load[cite: 3].
+* **Solution:** Avoid assuming normality for raw `Global_active_power` in parametric tests or naive linear assumptions; rely on quantile/regime segmentation (`Q1`–`Q4`), non-parametric/robust summaries, or appropriate transformations/time-aware models in later steps[cite: 3].
+
+---
+
+#### 3. Visual Evidence: Step 2 Descriptive Statistics Table
+
+![Step 2 Descriptive Statistics Summary Output in VS Code](Screenshot%20(354).png)
