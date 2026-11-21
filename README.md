@@ -385,3 +385,54 @@ Raw household power series often look deceptively simple when summarized by a si
 #### 3. Visual Evidence: Step 2 Descriptive Statistics Table
 
 ![Step 2 Descriptive Statistics Summary Output in VS Code](Screenshot%20(354).png)
+
+### Phase 3, Section 3.1 (Step 3): Conditional Load Profiles & Sub-Metering Behavior
+
+Overall descriptive statistics summarize total power demand, but household consumption shifts strongly across time of day, calendar days, and individual circuit branches[cite: 3]. Step 3 breaks `Global_active_power` down by `Hour` and `Weekday_Name` while evaluating zero-load intermittency across `Sub_metering_1`, `Sub_metering_2`, and `Sub_metering_3`[cite: 3].
+
+---
+
+#### 1. Problem Solved & Analytical Purpose
+1. **Pinpointing High-Demand Windows:** Identifying top hours by `mean` and `max_peak` shows when sustained household demand and sharp spikes occur rather than averaging everything into a single daily figure[cite: 3].
+2. **Comparing Central Tendency vs. Spread:** Tracking `median`, `std`, `var`, `iqr`, and `CV` reveals how consistent or volatile each hour and weekday is[cite: 3].
+3. **Measuring Circuit Intermittency:** Calculating `zero_share_pct` across sub-meters distinguishes continuous/recurring loads from appliances that sit idle most of the time[cite: 3].
+
+---
+
+#### 2. Output Breakdown, Reasons & Solutions
+
+##### A. Top 5 Hours by MEAN Active Power (`Global_active_power`)
+* **Hour 21 (`9 PM`):** `mean = 2.051`, `median = 1.868`, `std = 1.385`, `iqr = 1.874`, `max_peak = 9.410` across `42,208` observations[cite: 3].
+* **Hour 20 (`8 PM`):** `mean = 2.038`, `median = 1.776`, `std = 1.461`, `iqr = 2.088`, `max_peak = 10.348` across `42,285` observations[cite: 3].
+* **Hour 19 (`7 PM`):** `mean = 1.883`, `median = 1.612`, `std = 1.449`, `iqr = 2.118`, `max_peak = 10.670` across `42,169` observations[cite: 3].
+* **Hour 7 (`7 AM`):** `mean = 1.557`, `median = 1.498`, `std = 1.128`, `iqr = 1.842`, `max_peak = 9.486` across `40,873` observations[cite: 3].
+* **Hour 22 (`10 PM`):** `mean = 1.546`, `median = 1.330`, `std = 1.185`, `iqr = 1.594`, `max_peak = 9.272` across `42,064` observations[cite: 3].
+* **Reason:** Evening hours (`19:00`–`22:00`) combine occupancy, lighting, entertainment/cooking, and domestic routines, while `07:00` captures morning start-up activity[cite: 3].
+* **Solution:** Treat `19:00`–`21:00` (and `07:00`) as primary peak/shoulder windows for load profiling, anomaly checks, and downstream forecasting features[cite: 3].
+
+##### B. Top 5 Hours by PEAK (`MAX`) Active Power
+* **Highest Single Peaks:** Hour `19` (`10.670`), Hour `20` (`10.348`), Hour `1` (`10.290`), Hour `17` (`9.590`), and Hour `7` (`9.486`)[cite: 3].
+* **Reason:** Even when average load is modest—such as Hour `1` (`mean = 0.591`, `median = 0.328`, `iqr = 0.252`)—an occasional high-draw event (`max_peak = 10.290`) can push the maximum very high[cite: 3].
+* **Solution:** Evaluate peak capacity and outlier/spike behavior alongside `median` and `iqr` so rare extreme readings do not distort typical hourly expectations[cite: 3].
+
+##### C. Daily Variability & Central Tendency (`Weekday_Name`)
+* **Visible Weekdays (`Monday`–`Thursday`):**
+  * **Monday:** `mean = 1.058`, `median = 0.562`, `std = 1.017`, `var = 1.035`, `iqr = 1.178`, `max_peak = 9.486`, `CV = 0.961`[cite: 3].
+  * **Tuesday:** `mean = 1.166`, `median = 0.660`, `std = 1.146`, `var = 1.314`, `iqr = 1.292`, `max_peak = 8.944`, `CV = 0.983`[cite: 3].
+  * **Wednesday:** `mean = 1.132`, `median = 0.670`, `std = 1.075`, `var = 1.156`, `iqr = 1.258`, `max_peak = 8.974`, `CV = 0.950`[cite: 3].
+  * **Thursday:** `mean = 1.040`, `median = 0.504`, `std = 1.038`, `var = 1.078`, `iqr = 1.164`, `max_peak = 9.410`, `CV = 0.998`[cite: 3].
+* **Reason:** Across all four days, `mean` is substantially higher than `median` and `CV` stays close to `1.0` (`0.950`–`0.998`), reflecting right-skewed daily profiles where baseline periods are punctuated by higher-load intervals[cite: 3].
+* **Solution:** Pair `median` and `iqr` with `std` and `CV` when comparing days, and ensure the full `Monday`–`Sunday` table (including Friday–Sunday) is inspected in full output[cite: 3].
+
+##### D. Sub-Metering Zero Share (`zero_share_pct`)
+* **`Sub_metering_1`:** `91.103%` zero readings (active only ~8.9% of intervals)[cite: 3].
+* **`Sub_metering_2`:** `69.362%` zero readings (active ~30.6% of intervals)[cite: 3].
+* **`Sub_metering_3`:** `51.967%` zero readings (active ~48.0% of intervals)[cite: 3].
+* **Reason:** Different sub-metered circuits have different usage duty cycles—some are triggered intermittently while others operate more frequently across the dataset[cite: 3].
+* **Solution:** Account for high zero-inflation (`52%`–`91%` zeros) when analyzing or modeling sub-metering series rather than treating them like continuous, always-on loads[cite: 3].
+
+---
+
+#### 3. Visual Evidence: Step 3 Conditional & Sub-Metering Output
+
+![Step 3 Hourly, Daily, and Sub-Metering Output in VS Code](Screenshot%20(355).png)
