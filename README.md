@@ -436,3 +436,58 @@ Overall descriptive statistics summarize total power demand, but household consu
 #### 3. Visual Evidence: Step 3 Conditional & Sub-Metering Output
 
 ![Step 3 Hourly, Daily, and Sub-Metering Output in VS Code](Screenshot%20(355).png)
+
+### Phase 3, Section 3.1 (Visualizations): Distribution Shape, Weekly Load Regimes & Hourly Demand Profiles
+
+Visualizing active power (`Global_active_power`) across density curves, cumulative distributions, weekday comparisons, quantile curves, and hourly profiles turns raw telemetry into operational intelligence[cite: 4, 5, 6]. Together, these three diagnostic plots address core business problems in **baseline tariff/usage estimation, peak-load capacity planning, weekend vs. weekday demand shifting, and time-of-day load management**.
+
+---
+
+#### 1. Active Power Density (Histogram + KDE) & Empirical CDF (`output 2.png`)
+
+##### Business Problem Solved
+Utilities, energy service providers, and household energy planners often misallocate capacity or misread typical customer consumption when relying solely on averages or assuming normal (bell-shaped) load behavior[cite: 4]. This view separates **everyday baseline load** from **high-demand tail events**[cite: 4].
+
+##### Output Explanation
+* **Left Panel — Histogram + KDE:** The distribution is strongly right-skewed with a prominent low-load cluster near `~0.25–0.35` kW and a secondary hump around `~1.3–1.5` kW, while a long right tail stretches past `6–10` kW[cite: 4]. The **Median (`0.69`)** sits well below the **Mean (`1.17`)**[cite: 4].
+* **Right Panel — Empirical CDF (ECDF):** The cumulative curve climbs steeply at low power—crossing `0.50` (the median) well below `1.0` kW—before flattening gradually as it approaches `0.95` (the 95th percentile around `~3.5–3.6` kW) and `1.00`[cite: 4].
+
+##### Why This Happens & Business Solution
+* **Reason:** Households spend most intervals in low/idle or moderate multi-appliance states, while occasional heavy appliances or concurrent peak draws create a right-skewed upper tail that pulls the arithmetic mean (`1.17`) upward[cite: 4].
+* **Business Solution:** Use the **median (`0.69`)** and **ECDF thresholds** (such as the 50th and 95th percentiles) rather than the mean alone to define normal baseline consumption, set realistic tier/alert thresholds, and size reserve/peak headroom for upper-tail demand spikes[cite: 4].
+
+![Active Power Density and Empirical CDF](output%202.png)
+
+---
+
+#### 2. Day-of-Week Boxplots & Violins (`output 3.png`)
+
+##### Business Problem Solved
+Treating every day of the week as identical can mask higher weekend household demand and shift-driven load dispersion, leading to inaccurate weekly load schedules, maintenance windows, or demand-response targeting[cite: 5].
+
+##### Output Explanation
+* **Left Panel — Boxplots (Excluding Extreme Outliers):** Weekday medians (`Monday`–`Friday`) sit lower (roughly `~0.50–0.70` kW) with tighter upper whiskers, whereas **Saturday** and **Sunday** show higher medians (`~0.85–1.00` kW), wider boxes (`IQR`), and higher upper whiskers (`> 4.0` kW)[cite: 5].
+* **Right Panel — Violin + Quartiles (Sampled):** Every day displays a wide base at low power with a secondary bulge higher up and a long, narrow upper tail extending toward `~8–9+` kW, confirming multi-regime appliance usage across the week[cite: 5].
+
+##### Why This Happens & Business Solution
+* **Reason:** On weekdays, daytime household occupancy and heavy appliance use are often lower or more concentrated into specific windows, whereas weekends (`Saturday` and `Sunday`) bring extended home presence, cooking, cleaning, and leisure load[cite: 5].
+* **Business Solution:** Build **day-type-aware load profiles** (separating weekdays from weekends) for feeder scheduling, customer usage insights, and targeted off-peak/time-of-use nudges rather than applying a flat 7-day average[cite: 5].
+
+![Active Power by Day of Week Boxplot and Violin Plot](output%203.png)
+
+---
+
+#### 3. Quantile Function & Hourly Mean Profile (`output 4.png`)
+
+##### Business Problem Solved
+Peak grid stress and household bill spikes are driven by specific hours of the day and extreme upper percentiles rather than uniform 24-hour demand[cite: 6]. Identifying exact high-load hours and percentile inflection points enables targeted peak management[cite: 6].
+
+##### Output Explanation
+* **Left Panel — Quantile Function (1st to 99th Percentile):** Power rises gently from the 1st to roughly the 50th percentile, steps up through moderate load, and curves sharply upward above the ~80th–90th percentiles up to `~5.17` kW at the 99th percentile[cite: 6].
+* **Right Panel — Mean Active Power by Hour (`0–23`):** Demand is lowest overnight/early morning (`Hours 1–5`, around `~0.47–0.59` kW), rises sharply in the morning peak at **Hour 7 (`~1.56` kW)** and **Hour 8**, moderates through midday/afternoon (`~1.01–1.35` kW), and surges to a pronounced evening peak across **Hours 19–21 (`~1.88–2.05` kW)** before tapering off[cite: 6].
+
+##### Why This Happens & Business Solution
+* **Reason:** Daily human routines—waking/morning prep around `07:00`, daytime away/light load, and evening return/cooking/lighting around `19:00–21:00`—drive predictable diurnal waves, while simultaneous heavy loads create steep upper-quantile jumps[cite: 6].
+* **Business Solution:** Focus peak-load mitigation, time-of-use tariff design, and high-load alerts on the **evening peak window (`19:00–21:00`)** and **morning ramp (`07:00–08:00`)**, while using **upper-percentile thresholds (90th–99th)** to trigger surge/overload safeguards[cite: 6].
+
+![Quantile Function and Hourly Mean Active Power](output%204.png)
