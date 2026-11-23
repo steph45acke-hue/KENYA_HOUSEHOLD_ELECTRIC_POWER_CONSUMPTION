@@ -491,3 +491,62 @@ Peak grid stress and household bill spikes are driven by specific hours of the d
 * **Business Solution:** Focus peak-load mitigation, time-of-use tariff design, and high-load alerts on the **evening peak window (`19:00–21:00`)** and **morning ramp (`07:00–08:00`)**, while using **upper-percentile thresholds (90th–99th)** to trigger surge/overload safeguards[cite: 6].
 
 ![Quantile Function and Hourly Mean Active Power](output%204.png)
+
+### Phase 3, Section 3.2: Probability, Distributions, Exceedance Risk & Serial Dependence
+
+Moving from descriptive summaries into probability theory lets us test whether parametric distributions fit household active power (`Global_active_power`), quantify threshold exceedance risk across time windows, apply Bayes' theorem to high-load events, and account for time-series autocorrelation when measuring estimation uncertainty[cite: 5, 6, 7].
+
+---
+
+#### 1. Core Questions Answered & Business Problem Solutions
+
+1. **Are power readings normally distributed?**
+   * **Answer:** **No.** Across `n = 967,828` valid observations, `Global_active_power` has `Mean = 1.1744`, `SD = 1.1444`, positive **skewness (`1.7022`)**, and positive **excess kurtosis (`3.5745`)**[cite: 7]. Both **Shapiro–Wilk** (`W = 0.7945, p = 4.19e-62`) and the **Kolmogorov–Smirnov test against a fitted Normal** (`D = 0.1921, p = 4.11e-162`) strongly reject normality[cite: 7].
+   * **Business Solution:** Do not rely on symmetric normal bell-curve assumptions or standard deviations alone to model household load or set baseline tariffs/alerts[cite: 5, 7].
+
+2. **What does a heavy right tail mean for average consumption?**
+   * **Answer:** High-load appliance spikes pull the arithmetic mean (`1.1744` kW) higher than typical baseline operation while inflating upper-tail variance[cite: 5, 7].
+   * **Business Solution:** Separate **typical/median demand** (for routine usage baselines) from **upper-tail/percentile demand** (for peak feeder headroom, circuit protection, and surge planning)[cite: 5, 6, 7].
+
+3. **What is the probability consumption exceeds a chosen operational threshold?**
+   * **Answer:** Overall exceedance probabilities across all `967,828` intervals are[cite: 7]:
+     * `P(Power > 1.5 kW) = 0.2858` (`28.58%`)[cite: 7]
+     * `P(Power > 2.0 kW) = 0.1781` (`17.81%`)[cite: 7]
+     * `P(Power > 3.5 kW) = 0.0539` (`5.39%`)[cite: 7]
+   * **Business Solution:** Use exact empirical exceedance probabilities to size load-limiting rules, tier alerts, and reserve capacity for defined kW cutoffs[cite: 6, 7].
+
+4. **How does the probability change by hour or weekday?**
+   * **Answer:** Exceedance risk shifts dramatically by time of day and day type[cite: 7]:
+     * **Above `1.5 kW`:** `58.24%` in Evening (`19–21h`) vs. `5.40%` at Night (`1–4h`); `34.91%` on Weekends vs. `26.02%` on Weekdays[cite: 7].
+     * **Above `2.0 kW`:** `43.21%` in Evening (`19–21h`) vs. `3.94%` at Night (`1–4h`); `23.02%` on Weekends vs. `15.72%` on Weekdays[cite: 7].
+     * **Above `3.5 kW`:** `14.45%` in Evening (`19–21h`) vs. `0.40%` at Night (`1–4h`); `8.14%` on Weekends vs. `4.28%` on Weekdays[cite: 7].
+     * **Bayesian Posterior (`P(Evening 19–21h | Power > 2.0 kW)`):** Given a prior `P(Evening 19–21h) = 0.1308`, likelihood `P(Power > 2.0 | Evening) = 0.4321`, and marginal `P(Power > 2.0) = 0.1780`, Bayes' theorem yields a posterior probability of **`0.3175`** (`31.75%`), matching the direct empirical posterior (`0.3175`)[cite: 7].
+   * **Business Solution:** Target demand-response messaging, peak-window management, and weekend/evening capacity checks where conditional exceedance probabilities spike rather than applying uniform 24/7 rules[cite: 7].
+
+5. **Are observations independent, or does serial dependence invalidate simple formulas?**
+   * **Answer:** **Observations are strongly serially dependent, not i.i.d.** Lag-1 autocorrelation is **`0.9657`** and lag-60 autocorrelation is **`0.4941`**[cite: 7]. Because consecutive readings persist strongly over time, the effective sample size drops from `967,828` to roughly `n_eff ≈ 16,899` (lag-1 adjustment)[cite: 7]. Consequently, the naive i.i.d. standard error (`0.001163`) substantially **underestimates** true sampling uncertainty compared to the lag-1 adjusted SE (`0.008803`) and block-bootstrap SE (`0.012474`)[cite: 7].
+   * **Business Solution:** Avoid naive i.i.d. confidence interval/SE formulas on raw high-frequency time series; use block-aware or time-series-aware uncertainty estimation[cite: 7].
+
+---
+
+#### 2. Distribution Assessment, Assumptions & Caveats
+
+* **Normal Distribution (`mu = 1.1744, sigma = 1.1444`):** **Not defensible** for raw `Global_active_power`[cite: 5, 7]. The Q-Q plot bows sharply upward in the upper tail and flattens at the bottom, while the density curve assigns non-trivial probability below zero and misses the bimodal/clustered structure[cite: 5].
+* **Lognormal Distribution (`loc = 0, shape = 0.9876, scale = 0.7401`):** **Partially informative for positive skewness, but imperfect**[cite: 5, 7]. It captures right-skewness better than the Normal curve, yet under-fits the sharper low-load peak and secondary multi-appliance hump[cite: 5].
+* **Exponential Distribution (`loc = 0, scale = 1.1744`):** **Poor fit for household load shape**[cite: 5, 7]. Its density peaks monotonically at `x = 0`, whereas household consumption shows structured low/moderate operating modes and heavy upper-tail excursions[cite: 5].
+* **Poisson Distribution:** **Not applicable to continuous kW readings**; only defensible for discrete event counts (such as hourly threshold crossings or appliance switching counts) with appropriate variance checks.
+* **Empirical Distribution (ECDF / Quantiles):** **Most defensible non-parametric baseline** for computing observed threshold probabilities (`P(X > x) = 1 - F(x)`) and quantiles directly from data without forcing a rigid parametric shape[cite: 6].
+* **Key Caveats:** Sub-sampling (`n = 5,000` for Shapiro/KS; `n = 20,000` for Q-Q) aids diagnostic clarity and speed, while strong serial dependence (`lag-1 = 0.9657`) means consecutive intervals cannot be treated as independent trials[cite: 5, 7].
+
+---
+
+#### 3. Visual & Console Evidence
+
+##### Normal Q-Q Plot & Fitted vs. Empirical Densities (`output 5.png`)
+![Normal Q-Q Plot and Empirical vs Candidate Parametric Densities](output%205.png)
+
+##### Empirical CDF & Exceedance Probability Curve (`output 6.png`)
+![Empirical CDF and Exceedance Probability Curve](output%206.png)
+
+##### Section 3.2 Statistical Tests, Exceedance, Bayes & Autocorrelation Output (`Screenshot (356).png`)
+![Section 3.2 Console Output in VS Code](Screenshot%20(356).png)
