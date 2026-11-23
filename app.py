@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from scipy import stats
 
 DAY_ORDER = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
@@ -91,6 +92,7 @@ page = st.sidebar.selectbox(
         "📊 Phase 1: Data Cleaning & Quality Scorecard",
         "📈 Phase 2: Exploratory Data Analysis & Visualizations",
         "📐 Phase 3.1: Descriptive Statistics & Load Profiles",
+        "🎲 Phase 3.2: Probability & Distributions",
     ],
 )
 
@@ -375,3 +377,39 @@ elif page == "📐 Phase 3.1: Descriptive Statistics & Load Profiles":
 
     plt.tight_layout()
     st.pyplot(fig3, clear_figure=True)
+
+# --- MODULE 3.2: PROBABILITY & DISTRIBUTIONS ---
+elif page == "🎲 Phase 3.2: Probability & Distributions":
+    st.title("🎲 Probability, Distributions, Exceedance Risk & Serial Dependence")
+    st.markdown("### Section 3.2: Parametric Fits, Threshold Exceedance, Bayes' Rule & Autocorrelation")
+    st.markdown("---")
+
+    st.sidebar.markdown("### Section 3.2 Controls")
+    threshold_kW = st.sidebar.slider(
+        "Primary Exceedance Threshold (kW)",
+        min_value=0.5,
+        max_value=5.0,
+        value=2.0,
+        step=0.1,
+        key="m32_thresh",
+    )
+    dens_bins_32 = st.sidebar.slider(
+        "Density Histogram Bins",
+        min_value=20,
+        max_value=100,
+        value=60,
+        key="m32_bins",
+    )
+
+    s = df[power_col].dropna()
+    n = len(s)
+    if n == 0:
+        st.warning("⚠️ No valid active power rows available.")
+        st.stop()
+
+    pos = s[s > 0].to_numpy(dtype=float)
+    mean_val = float(s.mean())
+    std_val = float(s.std(ddof=1))
+
+    norm_mu, norm_sigma = stats.norm.fit(s.to_numpy(dtype=float))
+    fitted_norm = stats.norm(loc=float(norm_mu), scale=float
