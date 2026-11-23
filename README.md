@@ -550,3 +550,50 @@ Moving from descriptive summaries into probability theory lets us test whether p
 
 ##### Section 3.2 Statistical Tests, Exceedance, Bayes & Autocorrelation Output (`Screenshot (356).png`)
 ![Section 3.2 Console Output in VS Code](Screenshot%20(356).png)
+
+### Phase 3, Section 3.3: Sampling, Block Bootstrap & Uncertainty Analysis
+
+Building on our finding of strong serial dependence (`lag-1 autocorrelation = 0.9657`) and right-skewed load behavior, Section 3.3 evaluates **95% confidence intervals** for overall and hourly load metrics, quantifies **weekday vs. weekend consumption differences**, compares **i.i.d. vs. block bootstrap** uncertainty, and checks **hourly sample coverage** across time of day[cite: 4, 5, 6].
+
+---
+
+#### 1. Core Questions Answered & Business Problem Solutions
+
+1. **What is a 95% confidence interval for average hourly power?**
+   * **Answer:** Across all valid telemetry records, the overall mean is **`1.1744` kW** with a **95% block-bootstrap CI of `[1.1501, 1.2000]` kW**, while the median (`50th` percentile) is **`0.6880` kW** (`95% Block CI: [0.6359, 0.7500]` kW) and the `95th` percentile is **`3.5700` kW** (`95% Block CI: [3.5200, 3.6200]` kW)[cite: 6]. By hour of day, average power and its 95% block-bootstrap CI rise from low overnight load (e.g., Hour 3: `0.4664` kW, CI `[0.4409, 0.4951]` kW) through a morning ramp (Hour 7: `1.5571` kW, CI `[1.4951, 1.6172]` kW) to evening peak demand (Hours 19–21 reaching ~`1.88–2.05` kW, with Hour 21 at `2.0507` kW, CI `[1.9812, 2.1177]` kW)[cite: 4, 6].
+   * **Business Solution:** Plan hourly load schedules, peak-hour tariff windows, and evening feeder headroom around both the point average and its 95% uncertainty band rather than single unbuffered averages[cite: 4, 6].
+
+2. **How uncertain is the difference between weekday and weekend consumption?**
+   * **Answer:** Weekend consumption averages **`1.3481` kW** compared to **`1.1048` kW** on weekdays, yielding a mean difference (`Weekend - Weekday`) of **`+0.2433` kW** with a **95% block-bootstrap CI of `[+0.1847, +0.3068]` kW** (with the bootstrap distribution in `output 7.png` centered around `+0.243` kW)[cite: 4, 6]. Because the entire 95% interval lies strictly above `0`, weekend household power demand is consistently higher than weekday demand even after accounting for block persistence[cite: 4, 6].
+   * **Business Solution:** Account for higher weekend baseline/daytime household activity when sizing weekend energy budgets, appliance load forecasts, and customer usage alerts[cite: 4, 6].
+
+3. **Does a random sample represent all times of day?**
+   * **Answer:** A simple random sample (`n = 10,000`) touches all 24 hours (`0–23`), with a maximum hourly share gap of **`0.0051`** (`0.51` percentage points) against the population share in the comparison table[cite: 5, 6]. However, as shown in `output 8.png` (right panel), a random sample still shows noticeable hour-to-hour fluctuations around the true population curve, whereas **stratified sampling by `Hour`** tracks the population's hourly share closely across all 24 hours[cite: 5].
+   * **Business Solution:** Use **stratified sampling by time stratum (`Hour` and `Is_Weekend`)** or **contiguous time-block sampling** when building fast development subsets, and use the full dataset for final reporting[cite: 5, 6].
+
+4. **Why can an i.i.d. bootstrap be inappropriate for autocorrelated readings?**
+   * **Answer:** An i.i.d. bootstrap draws individual rows independently at random, breaking chronological dependence and treating correlated minute-level intervals as independent observations. On our data, the i.i.d. bootstrap 95% CI for the mean (`[1.1718, 1.1766]` kW, width `0.0048` kW) is dramatically narrower than the block-bootstrap 95% CI (`[1.1501, 1.2000]` kW, width `0.0499` kW)—roughly **10x narrower**—as visually clear in `output 8.png` (left panel)[cite: 5, 6].
+   * **Business Solution:** Never rely on i.i.d. resampling or naive independence intervals for time-series averages or group differences when serial correlation is high; use block bootstrap or time-aware resampling[cite: 5, 6].
+
+---
+
+#### 2. Uncertainty Analysis & Defensible Sampling Strategy
+
+* **Block Bootstrap Configuration:** Resampled contiguous blocks (`block_size = 240` intervals for overall and weekday/weekend comparisons; up to `60` within individual hours) with percentile 95% CIs (`[2.5, 97.5]`) to preserve short-term persistence[cite: 4, 5, 6].
+* **Skewness & Tail Awareness:** Reporting medians (`0.6880` kW) and `95th` percentiles (`3.5700` kW) alongside means (`1.1744` kW) prevents right-tail peaks from distorting typical consumption summaries[cite: 6].
+* **Defensible Sampling Strategy:**
+  * *Full-data inference:* Compute final operational thresholds, CIs, and exceedance metrics on `cleaned_household_power.parquet` (`n = 967,828` valid records)[cite: 6].
+  * *Subset prototyping:* Use **stratified sampling by hour/day-type** when balanced time-of-day coverage is needed, or **contiguous time-block sampling** when preserving local temporal dynamics matters[cite: 5].
+
+---
+
+#### 3. Visual & Console Evidence
+
+##### Hourly Mean 95% Block CIs & Weekend-Weekday Difference Distribution (`output 7.png`)
+![Average Hourly Active Power with 95% Block CIs and Weekend minus Weekday Bootstrap](output%207.png)[cite: 4]
+
+##### i.i.d. vs. Block Bootstrap Mean Spread & Hourly Sample Coverage (`output 8.png`)
+![Sampling Distribution of Overall Mean and Hourly Share Coverage Across Hours](output%208.png)[cite: 5]
+
+##### Section 3.3 Bootstrap Confidence Intervals & Coverage Output (`Screenshot (357).png`)
+![Section 3.3 Console Output in VS Code](Screenshot%20(357).png)[cite: 6]
