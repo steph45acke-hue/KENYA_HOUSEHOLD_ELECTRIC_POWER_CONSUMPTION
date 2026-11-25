@@ -597,3 +597,43 @@ Building on our finding of strong serial dependence (`lag-1 autocorrelation = 0.
 
 ##### Section 3.3 Bootstrap Confidence Intervals & Coverage Output (`Screenshot (357).png`)
 ![Section 3.3 Console Output in VS Code](Screenshot%20(357).png)[cite: 6]
+### Phase 3, Section 3.4: Hypothesis Testing — Full Workflow
+
+Section 3.4 formalizes statistical hypothesis testing across weekday/weekend load, evening vs. morning consumption, monthly seasonality, sub-metering patterns, and grid voltage during high- vs. low-load periods. Every test pairs formal hypotheses ($H_0$ and $H_1$) and test selection with **effect sizes**, **95% confidence intervals**, **Benjamini–Hochberg (BH) multiple-testing adjustment**, and explicit awareness of **serial dependence** and **practical vs. statistical significance**.
+
+---
+
+#### 1. Hypothesis Register (Hypotheses, Tests, Effect Sizes & Multiple-Testing Results)
+
+| ID | Question & Hypotheses ($H_0$ vs. $H_1$) | Test Choice & Assumptions | Test Stat | Raw $p$ | Effect Size | 95% CI | BH Adj. $p$ |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **H1** | **Weekday vs. Weekend Mean Power**<br>$H_0: \mu_{\text{wknd}} = \mu_{\text{wkdy}}$<br>$H_1: \mu_{\text{wknd}} \neq \mu_{\text{wkdy}}$ | Welch two-sample $t$-test (unequal variances) + Mann–Whitney $U$ rank check | $t = 87.62$ | $0.00 \times 10^{0}$ | $d = +0.214$ ($\text{diff} = +0.243\text{ kW}$) | $[+0.218, +0.261]$ | $0.00 \times 10^{0}$ |
+| **H2** | **Evening (19–21h) > Morning (6–9h) Consumption**<br>$H_0: \text{Med/Load}_{\text{eve}} \le \text{Load}_{\text{morn}}$<br>$H_1: \text{Med/Load}_{\text{eve}} > \text{Load}_{\text{morn}}$ | Mann–Whitney $U$ & Wilcoxon signed-rank on paired daily medians | $W = 207{,}387$ | $5.26 \times 10^{-42}$ | $\text{med\_diff} = +0.432\text{ kW}$ ($\text{mean\_diff} = +0.653\text{ kW}$) | $[+0.633, +0.681]$ | $6.14 \times 10^{-42}$ |
+| **H3** | **Load Profiles Across Months (1–12)**<br>$H_0: \mu_1 = \dots = \mu_{12}$<br>$H_1$: At least one month differs | One-way ANOVA & Kruskal–Wallis $H$-test (unequal monthly variance) | $F = 6{,}770.4$ / $H = 116{,}899.7$ | $0.00 \times 10^{0}$ | $\eta^2 = 0.0715$ | 12-month omnibus | $0.00 \times 10^{0}$ |
+| **H3b** | **Peak Month (12) vs. Lowest Month (8)**<br>$H_0: \mu_{12} = \mu_8$<br>$H_1: \mu_{12} \neq \mu_8$ | Welch two-sample $t$-test (post-hoc extreme-month pair) | $t = 192.91$ | $0.00 \times 10^{0}$ | $d = +0.956$ ($\text{diff} = +1.065\text{ kW}$) | $[+1.046, +1.093]$ | $0.00 \times 10^{0}$ |
+| **H4a** | **Dominant Sub-Meter by Day Type**<br>$H_0$: Independent in contingency table<br>$H_1$: Associated across day types | Pearson $\chi^2$ test of independence on day type $\times$ dominant sub-meter | $\chi^2 = 26.7$ | $1.59 \times 10^{-6}$ | Cramér's $V = 0.0053$ | Categorical contingency | $1.59 \times 10^{-6}$ |
+| **H4b** | **`Sub_metering_3`: Weekend vs. Weekday**<br>$H_0: \mu_{\text{sm3,wknd}} = \mu_{\text{sm3,wkdy}}$<br>$H_1: \mu_{\text{sm3,wknd}} \neq \mu_{\text{sm3,wkdy}}$ | Welch two-sample $t$-test (unequal variances) | $t = 25.06$ | $1.69 \times 10^{-138}$ | $d = +0.057$ ($\text{diff} = +0.473$) | $[+0.260, +0.600]$ | $2.36 \times 10^{-138}$ |
+| **H5** | **Voltage: High-Load (Q4) vs. Low-Load (Q1)**<br>$H_0: \mu_{V,\text{Q4}} = \mu_{V,\text{Q1}}$<br>$H_1: \mu_{V,\text{Q4}} \neq \mu_{V,\text{Q1}}$ | Welch two-sample $t$-test (unequal variances) | $t = -272.68$ | $0.00 \times 10^{0}$ | $d = -0.781$ ($\text{diff} = -2.434\text{ V}$) | $[-2.491, -2.363]$ | $0.00 \times 10^{0}$ |
+
+---
+
+#### 2. Key Questions Answered & Inference Guardrails
+
+* **Statistical vs. Practical Significance:** Because minute-level telemetry has a large sample size, tiny differences can yield very small $p$-values. Inspecting effect sizes and confidence intervals separates large operational shifts—such as Month 12 vs. Month 8 (`diff = +1.065 kW`, $d = +0.956$), high- vs. low-load voltage (`diff = -2.434 V`, $d = -0.781$), and evening vs. morning load (`med_diff = +0.432 kW`, `mean_diff = +0.653 kW`)—from small association magnitudes like dominant sub-meter contingency (`Cramér's V = 0.0053`) or `Sub_metering_3` day-type shift ($d = +0.057$).
+* **Assumptions & Variance Checks:** Monthly standard deviations vary substantially across the year (seen in `output 9.png`, left panel, ranging roughly from ~`0.80 kW` in Month 8 to ~`1.33 kW` in Month 12), alongside non-normal right-skewed load distributions. Using Welch's $t$-test, non-parametric rank/paired tests (Mann–Whitney $U$ and Wilcoxon signed-rank), and Kruskal–Wallis alongside ANOVA protects against equal-variance and normality violations.
+* **Multiple Comparisons Correction:** Applying Benjamini–Hochberg (BH) false discovery rate adjustment across all seven registered tests (`output 9.png`, right panel) keeps every tested hypothesis well above the $-\log_{10}(0.05) \approx 1.30$ threshold, while reminding us to report adjusted $p$-values whenever testing multiple families or post-hoc pairs.
+* **Serial Dependence Caveat:** High lag-1 autocorrelation (`~0.97`) means adjacent observations are not independent, so nominal $p$-values and unadjusted standard errors can be overly optimistic. Pairing formal tests with effect sizes, confidence intervals, and block-level uncertainty checks (from Section 3.3) keeps conclusions grounded.
+
+---
+
+#### 3. Visual & Console Evidence
+
+##### Monthly Variance Check & Raw vs. BH-Adjusted Evidence (`output 9.png`)
+![Power Standard Deviation by Month and Raw vs BH-Adjusted -log10 p-values](output%209.png)
+
+##### Effect-Size Forest Plot Across Key Comparisons (`output 10.png`)
+![Effect-Size Forest Plot Across Key Comparisons with 95% CIs](output%2010.png)
+
+##### Section 3.4 Hypothesis Register Output (`Screenshot (358).png`)
+![Section 3.4 Hypothesis Register Console Output in VS Code](Screenshot%20(358).png)[cite: 4, 5, 6]
+
