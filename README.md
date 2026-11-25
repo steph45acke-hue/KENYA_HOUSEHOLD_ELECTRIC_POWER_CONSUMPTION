@@ -686,3 +686,48 @@ Section 3.5 examines linear and monotonic associations across household power te
 
 ##### Section 3.5 Association & Regime Output (`Screenshot (359).png`)
 ![Section 3.5 Console Output in VS Code](Screenshot%20(359).png)[cite: 10]
+### Phase 3, Section 3.6: Regression Analysis and Diagnostics Report
+
+Section 3.6 models active power (`Global_active_power`) using multiple Ordinary Least Squares (OLS) with categorical hour indicators and an `Hour × Is_Weekend` interaction, checks variance inflation factors (VIF), compares standard OLS against HC3 robust standard errors and Huber robust regression, and evaluates a binary high-load (`> P90`) logistic regression classifier with probability calibration[cite: 9, 10].
+
+---
+
+#### 1. Key Questions Answered & Model Interpretation
+
+1. **Can hour, weekday, and sub-meter readings explain variation in active power, and how much variance is explained?**
+   * **Answer:** Yes—together, categorical `Hour`, `Is_Weekend`, their interaction (`C(Hour_cat) * Is_Weekend`), and sub-metering readings (`Sub_metering_1`, `Sub_metering_2`, `Sub_metering_3`) explain **$75.03\%$** of the variance in `Global_active_power` ($R^2 = 0.7503$, Adjusted $R^2 = 0.7500$, joint $F = 2{,}400.4$, $p < 10^{-300}$, $n = 40{,}000$)[cite: 10]. The remaining ~$25\%$ reflects unmetered baseline circuits and short-term appliance fluctuations.
+
+2. **Which predictors remain associated after controlling for others, and are coefficients practically meaningful?**
+   * **Answer:** Every core predictor remains statistically significant under HC3 heteroscedasticity-robust inference ($p < 0.001$)[cite: 10]:
+     * **`Sub_metering_1`:** $+0.06466\text{ kW}$ per $\text{Wh/min}$ ($\text{OLS SE} = 0.00045$, $\text{HC3 SE} = 0.00053$) — closely matching the physical conversion factor ($1\text{ Wh/min} = 0.06\text{ kW}$)[cite: 10].
+     * **`Sub_metering_2`:** $+0.06486\text{ kW}$ per $\text{Wh/min}$ ($\text{OLS SE} = 0.00043$, $\text{HC3 SE} = 0.00049$) — also aligned with the $0.06\text{ kW}$ physical energy-to-power scaling[cite: 10].
+     * **`Sub_metering_3`:** $+0.07171\text{ kW}$ per $\text{Wh/min}$ ($\text{OLS SE} = 0.00038$, $\text{HC3 SE} = 0.00043$) — slightly above $0.06\text{ kW}$ because electric water-heater/climate-control usage co-occurs with general household background load[cite: 10].
+     * **`Is_Weekend` (Reference Hour 0 baseline lift):** $+0.33855\text{ kW}$ ($\text{OLS SE} = 0.03137$, $\text{HC3 SE} = 0.03728$), representing a substantial practical shift of roughly a third of a kilowatt[cite: 10].
+
+3. **Do interaction effects exist between hour and weekday?**
+   * **Answer:** Yes—the joint $F$-test across all `C(Hour_cat) × Is_Weekend` interaction terms is highly significant ($F = 15.45$, $p = 5.22 \times 10^{-61}$), confirming that the 24-hour load profile shape differs meaningfully between weekends and weekdays rather than shifting by a constant offset alone[cite: 10].
+
+4. **Is multicollinearity inflating standard errors?**
+   * **Answer:** No—after excluding `Global_intensity` (which is nearly collinear with active power at $r = 0.9990$), Variance Inflation Factors across `Hour` ($\text{VIF} = 1.033$), `Is_Weekend` ($\text{VIF} = 1.005$), `Sub_metering_1` ($\text{VIF} = 1.026$), `Sub_metering_2` ($\text{VIF} = 1.021$), and `Sub_metering_3` ($\text{VIF} = 1.036$) are all near `1.0`, confirming negligible multicollinearity[cite: 10].
+
+5. **Are residuals centered, pattern-free, and homoscedastic, and does robust regression change conclusions?**
+   * **Answer:** Diagnostic plots (`output 14.jpg`) show residuals centered near zero on average, but with clear **non-normality in the upper tail** (Normal Q-Q plot curving sharply upward above $+1.5$ theoretical quantiles due to right-skewed load spikes) and **heteroscedasticity** (Residuals vs. Fitted and Scale-Location plots showing vertical banding and spread changes across fitted regimes)[cite: 8]. Leverage and Cook's distance (`output 15.png`, left panel) stay low ($\text{Cook's } D < 0.005$, $\text{leverage} < 0.0055$), so no single observation dominates the fit[cite: 9]. Using HC3 robust standard errors slightly widens SEs without altering significance, and `HuberRegressor` preserves positive load effects while downweighting extreme peak outliers[cite: 10].
+
+6. **Can a logistic model identify high-load periods (`> P90`), and is it calibrated?**
+   * **Answer:** Yes—logistic regression using categorical `Hour`, `Is_Weekend`, and sub-meters achieves strong discrimination ($\text{ROC-AUC} = 0.945$) and closely tracks the $45^\circ$ diagonal on the quantile calibration curve (`output 15.png`, right panel)[cite: 9]. Holding hour and sub-metering constant, weekends nearly double the odds of a high-load event ($\text{log-odds} = 0.6878$, $\text{Odds Ratio} = 1.9893$), while each $\text{Wh/min}$ increase in `Sub_metering_1` ($\text{OR} = 1.1734$), `Sub_metering_2` ($\text{OR} = 1.1802$), and `Sub_metering_3` ($\text{OR} = 1.1782$) raises high-load odds by ~$17\%\text{–}18\%$[cite: 10].
+
+7. **Are we explaining contemporaneous readings or forecasting future values?**
+   * **Answer:** **Contemporaneous explanation, not forward forecasting.** Because same-minute sub-metering readings and current hour/day indicators are used to explain same-minute `Global_active_power`, these models quantify structural load attribution rather than out-of-sample future prediction (which would require lagged predictors and chronological train/test splits).
+
+---
+
+#### 2. Visual & Console Evidence
+
+##### Fitted Line & Residual Diagnostics (`output 14.jpg`)
+![Active Power vs Sub_metering_3, Residuals vs Fitted, Normal Q-Q, and Scale-Location Diagnostics](output%2014.png)[cite: 8]
+
+##### Leverage/Cook's Distance, HC3 Coefficient CIs & Logistic Calibration (`output 15.png`)
+![Leverage vs Cook's Distance, OLS Coefficients with 95% HC3 CIs, and Logistic Calibration Curve](output%2015.png)[cite: 9]
+
+##### Section 3.6 Regression, VIF, Huber & Logistic Console Output (`Screenshot (360).png`)
+![Section 3.6 Regression and Diagnostics Console Output in VS Code](Screenshot%20(360).png)[cite: 10]
