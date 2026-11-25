@@ -636,4 +636,53 @@ Section 3.4 formalizes statistical hypothesis testing across weekday/weekend loa
 
 ##### Section 3.4 Hypothesis Register Output (`Screenshot (358).png`)
 ![Section 3.4 Hypothesis Register Console Output in VS Code](Screenshot%20(358).png)[cite: 4, 5, 6]
+### Phase 3, Section 3.5: Correlation and Association Report
 
+Section 3.5 examines linear and monotonic associations across household power telemetry, compares active power against current intensity and sub-meter totals, checks how voltage–power behavior shifts across load regimes, tracks lagged and rolling dynamics, verifies stability across years and months, and flags multicollinearity among engineered/electrical features[cite: 7, 8, 9, 10].
+
+---
+
+#### 1. Key Questions Answered & Analytical Findings
+
+1. **Which variables move together?**
+   * **Answer:** `Global_active_power` and `Global_intensity` move almost lockstep together (`Pearson r = 0.9990`, `Spearman rho = 0.9953`, `Kendall tau = 0.9619`), followed by strong associations between `Global_active_power` and the engineered sub-meter kW equivalent (`Sub_meter_kW_Eq`: `r = 0.8314`, `rho = 0.6959`) and `Sub_metering_3` (`r = 0.6199`, `rho = 0.5982`)[cite: 7, 10]. `Voltage` shows a moderate negative association with `Global_active_power` (`r = -0.40`, `rho = -0.33` in the correlation matrices)[cite: 7].
+
+2. **Is active power more strongly associated with intensity or sub-meter totals?**
+   * **Answer:** Active power is substantially more strongly associated with **`Global_intensity`** (`Pearson r = +0.9990`, `Spearman rho = +0.9953`) than with the sub-meter total **`Sub_meter_kW_Eq`** (`Pearson r = +0.8314`, `Spearman rho = +0.6959`) or individual sub-meters (`Sub_metering_3`: `r = +0.6199`, `rho = +0.5982`; `Sub_metering_1`: `r = +0.4673`, `rho = +0.3413`; `Sub_metering_2`: `r = +0.4675`, `rho = +0.1736`)[cite: 10]. Notice also that `Sub_metering_2` has a lower Spearman rank correlation (`+0.1736`) than Pearson correlation (`+0.4675`) with active power, reflecting sporadic/intermittent appliance spikes rather than steady rank co-movement[cite: 10].
+
+3. **Does voltage–power association vary by load level?**
+   * **Answer:** Yes—both mean voltage and the voltage–power correlation shift across load quartiles[cite: 10]:
+     * **Q1 (Low):** Mean `Voltage = 240.48 V`, `r = +0.1687`, `rho = +0.1814`[cite: 10]
+     * **Q2 (Mod-Low):** Mean `Voltage = 241.38 V`, `r = -0.0732`, `rho = -0.0759`[cite: 10]
+     * **Q3 (Mod-High):** Mean `Voltage = 239.53 V`, `r = -0.0647`, `rho = -0.0033`[cite: 10]
+     * **Q4 (Peak):** Mean `Voltage = 238.04 V`, `r = -0.3987`, `rho = -0.3617`[cite: 10]
+   * During low-to-moderate load regimes (`Q2`–`Q3`), correlation near the mean is weak, whereas during peak demand (`Q4`) average voltage drops (`238.04 V`) and shows a stronger negative correlation with active power (`r = -0.3987`, `rho = -0.3617`)[cite: 10].
+
+4. **Which relationships are nonlinear or lagged?**
+   * **Answer:** `Global_active_power` vs. `Global_intensity` follows a tight linear/hexbin band (`r = 0.9990`)[cite: 8, 10], whereas relationships involving sub-meters (especially `Sub_metering_2`, where `r = 0.47` vs. `rho = 0.17` in the sample comparison) and voltage across load quartiles exhibit non-linearity and regime shifts[cite: 7, 10]. Temporally, active power shows strong **lagged autocorrelation** that decays from near `1.0` at short lags down toward near zero around ~`360` intervals before rising again near a full-day cycle (`1440` intervals)[cite: 8].
+
+5. **Do correlations persist across years and seasons?**
+   * **Answer:** Yes—the linear association between active power and intensity remains consistently near `~0.999` across `2006` (`r = +0.9987`), `2007` (`r = +0.9990`), and `2008` (`r = +0.9989`), across all 12 months (`output 13.png`, right panel), and in the 30-day rolling correlation (`output 13.png`, left panel, staying tightly between `~0.9964` and `~1.0000`)[cite: 9, 10]. Meanwhile, `r(Power, Sub_m3)` rises from `+0.5271` in `2006` to `+0.6050` in `2007` and `+0.6185` in `2008`[cite: 10].
+
+---
+
+#### 2. Multicollinearity & Non-Causal Interpretation
+
+* **Multicollinearity Watch:** Strong correlations among `Global_active_power`, `Global_intensity` (`r = 0.9990`), and derived totals like `Sub_meter_kW_Eq` (`r = 0.8314` with active power; `Sub_metering_3` vs. `Sub_meter_kW_Eq` `r = 0.7176`) indicate high collinearity[cite: 7, 10]. Including redundant collinear predictors together in standard linear regression models can inflate variance or destabilize coefficient estimates, so feature selection or regularization is warranted when modeling.
+* **Non-Causal Discipline (Correlation $\neq$ Causation):** High correlation—whether between active power and intensity, across shared daily/seasonal cycles, or in autocorrelated time series—does **not** by itself prove cause and effect. For example, lower voltage during peak load (`Q4`) reflects electrical circuit/feeder loading dynamics alongside co-occurring household demand patterns, and daily/seasonal co-movement is shaped by shared household routines and serial persistence rather than isolated cause-effect pairs[cite: 8, 9, 10].
+
+---
+
+#### 3. Visual & Console Evidence
+
+##### Pearson vs. Spearman Correlation Matrices (`output 11.jpg`)
+![Pearson Linear and Spearman Rank Correlation Matrices](output%2011.jpg)[cite: 7]
+
+##### Hexbin Density & Lagged Autocorrelation (`output 12.png`)
+![Hexbin of Global Active Power vs Global Intensity and Lagged Autocorrelation](output%2012.png)[cite: 8]
+
+##### 30-Day Rolling Correlation & Monthly Correlation Profile (`output 13.png`)
+![30-Day Rolling Correlation and Monthly Pearson Correlation Across Months 1 to 12](output%2013.png)[cite: 9]
+
+##### Section 3.5 Association & Regime Output (`Screenshot (359).png`)
+![Section 3.5 Console Output in VS Code](Screenshot%20(359).png)[cite: 10]
