@@ -676,7 +676,7 @@ Section 3.5 examines linear and monotonic associations across household power te
 #### 3. Visual & Console Evidence
 
 ##### Pearson vs. Spearman Correlation Matrices (`output 11.jpg`)
-![Pearson Linear and Spearman Rank Correlation Matrices](output%2011.jpg)[cite: 7]
+![Pearson Linear and Spearman Rank Correlation Matrices](output%2011.png)[cite: 7]
 
 ##### Hexbin Density & Lagged Autocorrelation (`output 12.png`)
 ![Hexbin of Global Active Power vs Global Intensity and Lagged Autocorrelation](output%2012.png)[cite: 8]
