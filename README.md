@@ -731,3 +731,52 @@ Section 3.6 models active power (`Global_active_power`) using multiple Ordinary 
 
 ##### Section 3.6 Regression, VIF, Huber & Logistic Console Output (`Screenshot (360).png`)
 ![Section 3.6 Regression and Diagnostics Console Output in VS Code](Screenshot%20(360).png)[cite: 10]
+
+### Phase 3, Section 3.7: Time-Series Statistics Assessment
+
+Section 3.7 evaluates the temporal structure of `Global_active_power` across `2006-12-16 17:24:00` to `2008-12-13 21:38:00` (~`23.9` months / `728` days in the current parquet extract), covering multi-grain stationarity, daily and weekly seasonal cycles, structural change points, shock persistence via ACF, STL decomposition, and aggregation effects on variance and autocorrelation[cite: 11, 12, 13, 14].
+
+---
+
+#### 1. Aggregation Effects on Variance & Lag-1 Autocorrelation
+
+| Grain | Observations ($n$) | Mean Power (kW) | Variance ($\text{kW}^2$) | Std. Dev. (kW) | Lag-1 Autocorrelation ($r_1$) |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Minute (raw)** | 967,828 | 1.1744 | 1.30962 | 1.1444 | 0.9657 |
+| **Hourly (1h mean)** | 17,410 | 1.1203 | 0.92666 | 0.9626 | 0.7253 |
+| **Daily (1D mean)** | 728 | 1.1574 | 0.23160 | 0.4812 | 0.6188 |[cite: 14]
+
+---
+
+#### 2. Key Questions Answered
+
+1. **Is the series stationary at minute, hour, or day grain?**
+   * **Answer:** Short-window Augmented Dickey–Fuller (ADF) tests reject a unit root (`ADF = -10.78, p = 2.29e-19` at minute grain; `ADF = -11.52, p = 4.02e-21` at hourly grain), while KPSS highlights non-stationarity/level shifts at coarser horizons (`KPSS = 2.021, p = 0.0100` at hourly grain vs. `KPSS = 0.070, p = 0.1000` on the tested minute window)[cite: 14]. Combined with the shifting 30-day rolling mean and rolling standard deviation across `2007–2008` (`output 16.png`, left panel), the telemetry is **not strictly stationary in levels and variance** across the multi-year record due to strong diurnal/seasonal structure and regime shifts[cite: 11, 14].
+
+2. **What seasonal cycles appear at daily and weekly periods?**
+   * **Answer:** The hourly seasonal subseries (`output 18.png`, middle panel) shows a distinct bimodal daily load curve: overnight troughs around `03:00–05:00` (~`0.45–0.47 kW`), a morning peak around `07:00–08:00` (~`1.49 kW`), a midday dip around `16:00` (~`0.96 kW`), and a pronounced evening peak around `20:00–21:00` (~`2.00 kW`)[cite: 12]. Weekly subseries (`output 18.png`, right panel) show higher average daily load on **Saturday** (~`1.32 kW`) and **Sunday** (~`1.33 kW`) compared to weekdays (~`1.02–1.15 kW`)[cite: 12].
+
+3. **Are there structural changes across the record?**
+   * **Answer:** Yes—both the 30-day rolling daily series and monthly mean profile (`output 16.png`) show pronounced multi-month swings and a primary monthly mean change point around **`2007-04`**, alongside a sharp dip in late summer `2008` followed by recovery into late `2008`[cite: 11].
+
+4. **How persistent are shocks?**
+   * **Answer:** Persistence is high at fine resolution (`lag-1 autocorrelation = 0.9657` at minute grain)[cite: 14]. On the hourly series (`output 18.png`, left panel), autocorrelation decays rapidly over the first few hours (dropping below `0.50` by lag 2) before rebounding around lag 24 (~`0.43`) due to the 24-hour daily cycle[cite: 12, 14].
+
+5. **What is the effect of aggregation on variance and autocorrelation?**
+   * **Answer:** Aggregating from minute → hourly → daily reduces variance from `1.30962` (`SD = 1.1444 kW`) to `0.92666` (`SD = 0.9626 kW`) and `0.23160` (`SD = 0.4812 kW`) as rapid minute-to-minute switching spikes average out[cite: 14]. Lag-1 autocorrelation also steps down from `0.9657` (minute) to `0.7253` (hourly) and `0.6188` (daily) as high-frequency adjacent-minute inertia is replaced by broader hour-to-hour and day-to-day dynamics[cite: 14].
+
+---
+
+#### 3. Visual & Console Evidence
+
+##### Daily Rolling Mean/Std & Monthly Change Point (`output 16.png`)
+![Daily 30-Day Rolling Mean and Std Dev and Monthly Mean Change Point](output%2016.png)[cite: 11]
+
+##### Hourly ACF & Daily/Weekly Seasonal Subseries (`output 18.png`)
+![Hourly ACF Lags 1 to 36h, Daily Seasonal Subseries by Hour, and Weekly Subseries by Day of Week](output%2018.png)[cite: 12]
+
+##### STL Decomposition — Trend, Seasonal & Remainder (`output 19.png`)
+![STL Decomposition of Hourly Active Power Showing Trend, Seasonal, and Remainder Components](output%2019.png)[cite: 13]
+
+##### Section 3.7 Aggregation & Stationarity Console Output (`Screenshot (361).png`)
+![Section 3.7 Console Output Showing Aggregation Table and ADF/KPSS Tests](Screenshot%20(361).png)[cite: 14]
