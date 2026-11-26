@@ -836,3 +836,50 @@ The source Parquet table contains **968,294 rows** across **12 columns**, with *
 
 ##### DDL Generation & Source Row/Null Profile (`Screenshot (362).png`)
 ![DDL Export and Source Parquet Row and Null Profile in VS Code](Screenshot%20(362).png)[cite: 16]
+
+### Phase 4, Section 4.2: SQL Fundamentals and Data Cleaning
+
+Section 4.2 implements SQL validation, deduplication, temporal rollups, peak-threshold filtering, and transactional data promotion (`04_2_cleaning_and_validation.sql` inside `04_1_database_design_and_sql_modelling.ipynb`)[cite: 15].
+
+---
+
+#### 1. Uniqueness, Duplicates & Monthly Telemetry Counts
+
+The dataset contains **968,294 total rows**, **968,294 unique timestamps**, **728 unique dates**, and **0 duplicate timestamp rows** (`GROUP BY reading_ts HAVING COUNT(*) > 1` returned no duplicates)[cite: 15]. Monthly reading volumes (`output 21.png`, right panel) span from partial start/end months (`2006-12` with `21,820` readings across `16` active days, `mean_kw = 1.9114`; `2008-12` partial) up to full months typically between ~`31,500` and `43,657` readings (such as `2007-01` with `43,657` readings across `31` days, `mean_kw = 1.5711`, and `2007-05` with `43,378` readings across `31` days, `mean_kw = 1.0070`)[cite: 14, 15].
+
+| Year | Month | Readings | Active Days | Mean Active Power (kW) |
+| :--- | :--- | :--- | :--- | :--- |
+| 2006 | 12 | 21,820 | 16 | 1.9114 |
+| 2007 | 1 | 43,657 | 31 | 1.5711 |
+| 2007 | 2 | 37,821 | 28 | 1.4720 |
+| 2007 | 3 | 41,050 | 31 | 1.4040 |
+| 2007 | 4 | 35,913 | 29 | 0.9534 |
+| 2007 | 5 | 43,378 | 31 | 1.0070 |
+| 2007 | 6 | 41,726 | 30 | 0.8479 |
+| 2007 | 7 | 41,494 | 31 | 0.7055 |
+| 2007 | 8 | 39,655 | 31 | 0.8374 |
+| 2007 | 9 | 40,016 | 30 | 1.0307 |
+| 2007 | 10 | 40,270 | 31 | 1.1909 |
+| 2007 | 11 | 38,502 | 30 | 1.4159[cite: 15] |
+
+---
+
+#### 2. Key SQL Cleaning & Validation Findings
+
+* **Missing & Invalid Measurements**
+  * Missingness (`466` null rows per core column, or `0.0481%`) is identical across `Global_active_power`, `Voltage`, `Sub_metering_1`, `Sub_metering_2`, and `Sub_metering_3`, while duplicate timestamp rows equal `0` (`output 21.png`, left panel)[cite: 14].
+  * SQL `CASE` expressions flag missing timestamps, null/negative active power, non-positive voltage, and negative sub-meter values before promotion[cite: 15].
+* **Peak Days Exceeding Threshold (`MAX > 6.0 kW`)**
+  * Aggregating by date with `GROUP BY` and `HAVING MAX(global_active_power) > 6.0` isolates high-peak days, including `2007-12-28` (`1,411` readings, `mean = 2.2009 kW`, `peak = 9.590 kW`), `2007-03-05` (`1,370` readings, `mean = 1.9238 kW`, `peak = 9.486 kW`), `2008-04-12` (`1,401` readings, `mean = 1.9897 kW`, `peak = 9.482 kW`), and `2007-02-22` (`1,422` readings, `mean = 2.3473 kW`, `peak = 9.410 kW`)[cite: 15].
+* **Standardisation & Safe Transactions**
+  * String trimming/nullification (`TRIM`, `NULLIF`), fallback handling (`COALESCE`), explicit type casting (`CAST(... AS DECIMAL/DATETIME/UNSIGNED)`), and `INSERT IGNORE` inside `START TRANSACTION; ... COMMIT;` ensure idempotent, type-safe loading into `fact_power_readings`[cite: 15].
+
+---
+
+#### 3. Visual & Console Evidence
+
+##### Null/Duplicate Counts & Monthly SQL Reading Counts (`output 21.png`)
+![Missing Values and Duplicate Timestamp Rows alongside Readings per Year-Month](output%2021.png)[cite: 14]
+
+##### Section 4.2 SQL Validation & Query Output (`Screenshot (363).png`)
+![Section 4.2 SQL Uniqueness, Monthly Counts, and Peak Days Output in VS Code](Screenshot%20(363).png)[cite: 15]
