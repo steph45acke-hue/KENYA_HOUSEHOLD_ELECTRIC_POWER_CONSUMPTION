@@ -780,3 +780,59 @@ Section 3.7 evaluates the temporal structure of `Global_active_power` across `20
 
 ##### Section 3.7 Aggregation & Stationarity Console Output (`Screenshot (361).png`)
 ![Section 3.7 Console Output Showing Aggregation Table and ADF/KPSS Tests](Screenshot%20(361).png)[cite: 14]
+
+### Phase 4, Section 4.1: Database Design and Data Modelling
+
+Section 4.1 establishes the relational warehouse design, grain definitions, keys and constraints, indexing strategy, source dataset row/null profile, and schema architecture for the household power telemetry project (`04_1_database_design_and_sql_modelling.ipynb` and `04_1_schema_ddl.sql`)[cite: 15, 16].
+
+---
+
+#### 1. Source Dataset Profile (`cleaned_household_power.parquet`)
+
+The source Parquet table contains **968,294 rows** across **12 columns**, with **0.0481%** missingness (`466` nulls) across core electrical and derived columns, `0.0001%` (`1` null) in `Global_active_power_imputed`, and `0` nulls in `GAP_Indicator` and `Outlier_Flag_Extreme`[cite: 16].
+
+| Column | Data Type | Null Count | Null % |
+| :--- | :--- | :--- | :--- |
+| `Global_active_power` | `float64` | 466 | 0.0481% |
+| `Global_reactive_power` | `float64` | 466 | 0.0481% |
+| `Voltage` | `float64` | 466 | 0.0481% |
+| `Global_intensity` | `float64` | 466 | 0.0481% |
+| `Sub_metering_1` | `float64` | 466 | 0.0481% |
+| `Sub_metering_2` | `float64` | 466 | 0.0481% |
+| `Sub_metering_3` | `float64` | 466 | 0.0481% |
+| `GAP_Indicator` | `int64` | 0 | 0.0000% |
+| `Global_active_power_imputed` | `float64` | 1 | 0.0001% |
+| `Outlier_Flag_Extreme` | `int64` | 0 | 0.0000% |
+| `Derived_Active_Energy_wh` | `float64` | 466 | 0.0481% |
+| `Sub_metering_4_Residual` | `float64` | 466 | 0.0481%[cite: 16] |
+
+---
+
+#### 2. Table Grains, Keys, Constraints & Architecture Decisions
+
+* **Table Grains**
+  * `stg_power_readings`: One raw imported record per source row/timestamp before validation.
+  * `etl_ingestion_batch`: One record per ETL load execution (`batch_id`).
+  * `dim_date`: One record per calendar day (`date_key` formatted as `YYYYMMDD`).
+  * `fact_power_readings`: One record per 1-minute household power reading (`reading_ts`).
+  * `etl_data_quality_issue`: One logged data-quality event per rule violation or anomaly detected during ingestion.
+  * `agg_daily_power_summary`: One pre-aggregated summary record per calendar day (`date_key`).
+* **Primary Keys, Foreign Keys & Duplicate Prevention**
+  * `fact_power_readings` uses `reading_id` as primary key, enforces a **`UNIQUE` constraint on `reading_ts`** to prevent duplicate timestamps, and links via foreign keys to `dim_date (date_key)` and `etl_ingestion_batch (batch_id)`.
+  * `agg_daily_power_summary` uses `date_key` as both primary key and foreign key to `dim_date (date_key)`.
+  * `etl_data_quality_issue` links back to `etl_ingestion_batch (batch_id)` and `dim_date (date_key)` for full auditability.
+* **Indexes & Grain Separation**
+  * Indexes target `reading_ts`, `(date_key, reading_ts)`, `batch_id`, and `(batch_id, rule_code)` to accelerate time-window queries, batch auditing, and daily rollups.
+  * Minute-level readings (`fact_power_readings`) and daily rollups (`agg_daily_power_summary`) are separated into distinct tables so row counts, averages, and `GROUP BY` semantics remain unambiguous.
+* **Fact vs. Dimension Separation**
+  * Fact and aggregate tables store quantitative telemetry and summary metrics (`global_active_power_kw`, `voltage_v`, `sub_metering_1..3_wh`, `total_energy_kwh`), while `dim_date` stores descriptive calendar attributes (`year_num`, `quarter_num`, `month_num`, `day_name`, `is_weekend`)[cite: 15].
+
+---
+
+#### 3. Schema Diagram & Console Evidence
+
+##### Household Power Warehouse Star Schema & ETL Audit Model (`output 20.png`)
+![Household Power Warehouse Star Schema and ETL Audit Model](output%2020.png)[cite: 15]
+
+##### DDL Generation & Source Row/Null Profile (`Screenshot (362).png`)
+![DDL Export and Source Parquet Row and Null Profile in VS Code](Screenshot%20(362).png)[cite: 16]
