@@ -883,3 +883,61 @@ The dataset contains **968,294 total rows**, **968,294 unique timestamps**, **72
 
 ##### Section 4.2 SQL Validation & Query Output (`Screenshot (363).png`)
 ![Section 4.2 SQL Uniqueness, Monthly Counts, and Peak Days Output in VS Code](Screenshot%20(363).png)[cite: 15]
+
+### Phase 4, Section 4.3: Aggregation, Joins and Analytical Queries
+
+Section 4.3 implements multi-table joins, calendar anti-joins, `NOT EXISTS` checks, Common Table Expressions (CTEs), conditional aggregation, sub-meter share calculations, and monthly variability metrics (`04_3_analytical_query_bank.sql` inside `04_1_database_design_and_sql_modelling.ipynb`)[cite: 9].
+
+---
+
+#### 1. Monthly Average, Peak, Total Energy (kWh) & Variability
+
+Across the monthly CTE rollups, total monthly energy reaches highs such as **1,193.65 kWh** in `2007-12` (`mean_kw = 1.6986`, `max_kw = 9.686`, `std_kw = 1.3584`) and **1,143.14 kWh** in `2007-01` (`mean_kw = 1.5688`, `max_kw = 9.272`, `std_kw = 1.2929`), while monthly active power spread (`range_kw` and `std_kw`) is widest during winter/high-load months (`2006-12` `std_kw = 1.4173`, `range_kw = 8.938`; `2007-12` `std_kw = 1.3584`, `range_kw = 9.490`; `2007-03` `range_kw = 10.470`) and narrowest during low-load periods (`2008-08` `std_kw = 0.4751`, `mean_kw = 0.3285`)[cite: 9].
+
+| Year | Month | Active Days | Mean Active Power (kW) | Max Active Power (kW) | Total Energy (kWh) | Range (kW) | Std. Dev. (kW) |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 2006 | 12 | 16 | 1.9616 | 9.132 | 694.98 | 8.938 | 1.4173 |
+| 2007 | 1 | 31 | 1.5688 | 9.272 | 1,143.14 | 9.074 | 1.2929 |
+| 2007 | 2 | 28 | 1.4258 | 9.410 | 927.85 | 9.206 | 1.3214 |
+| 2007 | 3 | 31 | 1.3744 | 10.670 | 960.55 | 10.470 | 1.2907 |
+| 2007 | 4 | 29 | 0.9357 | 8.160 | 568.71 | 8.056 | 1.0149 |
+| 2007 | 5 | 31 | 1.0062 | 7.672 | 728.06 | 7.566 | 1.0123 |
+| 2007 | 6 | 30 | 0.8464 | 7.614 | 589.04 | 7.532 | 0.9618 |
+| 2007 | 7 | 31 | 0.7017 | 7.240 | 486.34 | 7.142 | 0.8401 |
+| 2007 | 8 | 31 | 0.8335 | 8.694 | 553.17 | 8.596 | 0.9221 |
+| 2007 | 9 | 30 | 1.0302 | 8.110 | 687.39 | 8.012 | 1.0823 |
+| 2007 | 10 | 31 | 1.1794 | 9.036 | 799.28 | 8.842 | 1.1417 |
+| 2007 | 11 | 30 | 1.3952 | 9.326 | 908.52 | 9.132 | 1.2248 |
+| 2007 | 12 | 31 | 1.6986 | 9.686 | 1,193.65 | 9.490 | 1.3584 |
+| 2008 | 1 | 31 | 1.5226 | 10.162 | 1,071.21 | 9.950 | 1.2068 |
+| 2008 | 2 | 29 | 1.2950 | 8.716 | 790.27 | 8.514 | 1.1792 |
+| 2008 | 3 | 31 | 1.3356 | 8.662 | 899.68 | 8.460 | 1.1587 |
+| 2008 | 4 | 30 | 1.1570 | 9.482 | 787.64 | 9.272 | 1.0903 |
+| 2008 | 5 | 31 | 1.0429 | 8.944 | 753.22 | 8.792 | 0.9705 |
+| 2008 | 6 | 30 | 1.0138 | 7.578 | 709.07 | 7.490 | 0.9828 |
+| 2008 | 7 | 31 | 0.8190 | 7.126 | 582.37 | 6.992 | 0.8101 |
+| 2008 | 8 | 31 | 0.3285 | 7.520 | 181.43 | 7.444 | 0.4751 |
+| 2008 | 9 | 30 | 1.0305 | 7.318 | 697.05 | 7.178 | 0.9727[cite: 9]
+
+---
+
+#### 2. Key Analytical Findings
+
+* **Top 10 Peak-Consumption Dates**
+  * Ranked by total daily energy (`kWh`), `2006-12-23` leads at ~`79–80 kWh`, followed by `2007-02-03` (~`67 kWh`), `2006-12-26` (~`66 kWh`), `2007-02-18` (~`63 kWh`), `2007-02-04`, `2007-02-11`, `2007-03-31`, `2007-03-11`, `2006-12-31`, and `2007-01-21` (`output 22.png`, left panel)[cite: 10].
+* **Weekday vs. Weekend Load & High-Load Hours**
+  * Weekdays show a sharp morning peak around hour `7` (~`1.77 kW`) and a strong evening peak around hour `21` (~`2.05 kW`), whereas weekends stay elevated across daytime/afternoon hours (`10:00–17:00` around `1.4–1.67 kW`) and peak higher in the evening around hours `19–20` (~`2.31 kW`) (`output 22.png`, middle and right panels)[cite: 10].
+* **Sub-Meter Share of Total Active Energy**
+  * Out of total active energy, **Sub-Meter 1 (`SM1`)** accounts for **6.49%**, **Sub-Meter 2 (`SM2`)** accounts for **8.12%**, **Sub-Meter 3 (`SM3`)** accounts for **32.21%**, and **Unmetered** load accounts for **53.18%**[cite: 9].
+* **Calendar Anti-Joins & Dimension Integrity**
+  * Comparing `dim_date` via `LEFT JOIN ... WHERE f.date_key IS NULL` surfaces any calendar dates without telemetry, while `NOT EXISTS` checks verify whether fact rows lack a matching calendar or batch record[cite: 9].
+
+---
+
+#### 3. Visual & Console Evidence
+
+##### Top 10 Peak Dates, Weekday vs. Weekend Curve & Hour × Day Heatmap (`output 22.png`)
+![Top 10 Peak Dates, Weekday vs Weekend Hourly Profile, and Hour by Day-of-Week Heatmap](output%2022.png)[cite: 10]
+
+##### Section 4.3 Monthly Rollup & Sub-Meter Share Output (`Screenshot (364).png`)
+![Section 4.3 Monthly Summary and Sub-Meter Energy Share Output in VS Code](Screenshot%20(364).png)[cite: 9]
