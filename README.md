@@ -990,3 +990,39 @@ Section 4.4 applies SQL window functions (`OVER`, `PARTITION BY`, `ORDER BY`, `R
 
 ##### Window-Query Console Output (`Screenshot (365).png`)
 ![Section 4.4 SQL Window Function Output in VS Code](Screenshot%20(365).png)[cite: 7]
+
+### Phase 4, Section 4.5: Advanced SQL: Optimisation, Reliability and Analytics
+
+Section 4.5 covers index design, query plan inspection, sargable date predicates, runtime benchmarking, idempotent upserts, atomic transaction rollbacks, and SQL-to-Pandas metric reconciliation (`04_5_optimisation_and_idempotent_etl.sql` inside `04_1_database_design_and_sql_modelling.ipynb`)[cite: 9].
+
+---
+
+#### 1. Answers to Core Optimisation, Reliability & Architecture Questions
+
+* **Which queries are slow and why?**
+  * Queries scanning nearly a million rows without a matching index on grouped/filtered columns—or wrapping date columns inside functions on the filter side—suffer from full table scans and extra sorting overhead.
+* **Does a composite index improve timestamp-range and grouped queries?**
+  * Yes. Adding a composite index on `(date_key, ts_str, power_kw)` reduces median query runtime on the date-range + `GROUP BY` query from ~`470 ms` down to ~`285 ms` (~`39%` faster) and on the `DateKey + High Load` filtered query from ~`300 ms` down to ~`98 ms` (~`67%` faster), while keeping single-day range slices near ~`0–1 ms`[cite: 9].
+* **Can a query use an index or is it scanning the full table?**
+  * Inspecting `EXPLAIN QUERY PLAN` confirms the shift from a full table scan before indexing to an index seek / covering lookup after adding the composite index, while using sargable range bounds (`ts_str >= '...' AND ts_str < '...'`) preserves index usability[cite: 9].
+* **Can the ETL rerun without duplicate inserts?**
+  * Yes. Enforcing a primary/unique key on `reading_ts` and using upsert logic (`ON DUPLICATE KEY UPDATE` in MySQL; `ON CONFLICT(ts_str) DO UPDATE` in SQLite) ensures rerunning an existing batch updates values cleanly with `0` unintended duplicate rows (`+rows=0` on rerun)[cite: 9].
+* **Can SQL aggregates be reconciled to Python results?**
+  * Yes. Daily energy (`kWh`) computed via SQL `SUM(power_kw) / 60.0` matches Pandas `s.sum() / 60.0` across all days with a maximum absolute difference of **`1.4e-14` kWh** (floating-point precision parity)[cite: 9].
+* **What happens if a batch fails halfway through?**
+  * Wrapping loads in an explicit transaction (`BEGIN` / `START TRANSACTION` ... `COMMIT`) and issuing `ROLLBACK` on error reverts uncommitted changes (`ROLLED_BACK`, `+rows=0`, `err=1`) so the warehouse stays consistent[cite: 9].
+* **Which calculations belong in SQL and which in Python?**
+  * **SQL:** Filtering, deduplication, dimension joins, group/window aggregations, constraint enforcement, and transactional loading.
+  * **Python:** Statistical modeling, diagnostics, reconciliation assertions, and multi-panel visual reporting.
+
+---
+
+#### 2. Visual Evidence & Plot Explanation (`output 24.png`)
+
+* **Top-Left — Query Runtime Benchmark (Median ms):** Compares median execution time before indexing (red bars) versus after adding the composite index (green bars), showing substantial speedups on `Date Range + Group` (~`470 ms` to ~`285 ms`) and `DateKey + High Load` (~`300 ms` to ~`98 ms`)[cite: 9].
+* **Top-Right — `EXPLAIN QUERY PLAN` Comparison & Sargability Rule:** Summarizes the execution plan shift from full table scan before indexing to index seek / covering behavior afterward, alongside the sargability rule (`ts_str >= '...' AND ts_str < '...'` instead of function-wrapped date predicates)[cite: 9].
+* **Bottom-Left — SQL vs. Pandas Daily kWh Scatterplot:** Plots SQL-computed daily energy (`kWh`) against Pandas-computed daily energy (`kWh`) along the `1:1` parity dashed line; all points align tightly on the diagonal with a maximum difference of `1.4e-14`[cite: 9].
+* **Bottom-Right — ETL Batch Reliability & Rollback Status:** Displays three batch outcomes—`Batch 1: Initial` (`SUCCESS | +rows=500, err=0`), `Batch 2: Rerun` (`IDEMPOTENT_OK | +rows=0, err=0`), and `Batch 3: Failed` (`ROLLED_BACK | +rows=0, err=1`)—proving safe reruns and clean error recovery[cite: 9].
+
+##### Section 4.5 Benchmark, Query Plan, Reconciliation & ETL Status (`output 24.png`)
+![Query Runtime Benchmark, EXPLAIN Query Plan Summary, SQL vs Pandas Daily kWh Scatterplot, and ETL Batch Status](output%2024.png)[cite: 9]
