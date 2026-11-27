@@ -1026,3 +1026,72 @@ Section 4.5 covers index design, query plan inspection, sargable date predicates
 
 ##### Section 4.5 Benchmark, Query Plan, Reconciliation & ETL Status (`output 24.png`)
 ![Query Runtime Benchmark, EXPLAIN Query Plan Summary, SQL vs Pandas Daily kWh Scatterplot, and ETL Batch Status](output%2024.png)[cite: 9]
+## Phase 5: Machine Learning and Forecasting (`05_1_machine_learning_and_forecasting.ipynb`)
+
+Phase 5 formulates **future hourly active-power forecasting (`t + 1h` and `t + 24h`)** and **high-load event detection (`>= 2.5 kW` at `t + 1h`)** on the hourly household power dataset using strictly past-available features, chronological train/validation/test splits, supervised regression and classification models, daily load-profile clustering, anomaly detection, uncertainty intervals, and error/explainability diagnostics[cite: 6, 7, 8, 9].
+
+---
+
+### 5.1 & 5.2 Problem Framing, Leakage Prevention & Feature Engineering
+
+The dataset is split chronologically without shuffling into **12,048 train rows**, **2,582 validation rows**, and **2,582 test rows** with **48 past-available features**, where all preprocessing scalers/imputers are fitted strictly on the training fold and no future target columns or post-horizon values enter the feature set[cite: 6, 9].
+
+* **Lag & Feature Signals**
+  * Short-term persistence (`1h` lag, `r ≈ 0.48`) and weekly/daily seasonal lags (`168h` lag, `r ≈ 0.39`; `24h` lag, `r ≈ 0.38`) carry strong predictive signal with the `+1h` target, while `6h` lag shows weak linear correlation (`r ≈ 0.02`)[cite: 6].
+  * Current/recent load and volatility indicators (`mean_a`, `mean_kw`, `max_kw`, `residual_unmetered_kwh`, `min_kw`, `roll_mean_3h_kw`, `roll_max_3h_kw`, `std_kw`) rank highest by absolute Pearson correlation (`|r| ≈ 0.55–0.72`) with the `+1h` target[cite: 6, 9].
+
+---
+
+### 5.3 Supervised Regression Benchmark (`+1h` Target)
+
+Tree-based ensembles clearly outperform both linear models and persistence/seasonal baselines on the held-out test set (`2,582` hours), reducing test MAE from `0.4545 kW` (`Naive_Persistence_1h`) and `0.7137 kW` (`Seasonal_Lag24h`) down to **`0.3598–0.3635 kW`** (`MASE ≈ 0.80`, `R² ≈ 0.68`)[cite: 7, 9].
+
+| Model | Test MAE (kW) | Test RMSE (kW) | Test R² | MASE |
+| :--- | :--- | :--- | :--- | :--- |
+| ExtraTrees | 0.3622 | 0.5195 | 0.6840 | 0.7968 |
+| GradBoost | 0.3635 | 0.5204 | 0.6828 | 0.7997 |
+| RandomForest | 0.3598 | 0.5208 | 0.6824 | 0.7917 |
+| Ridge(a=10) | 0.4045 | 0.5655 | 0.6255 | 0.8900 |
+| LinearReg | 0.4059 | 0.5657 | 0.6252 | 0.8931 |
+| ElasticNet | 0.4030 | 0.5672 | 0.6233 | 0.8866 |
+| DecisionTree | 0.3910 | 0.5698 | 0.6197 | 0.8603 |
+| Lasso(a=0.01) | 0.4059 | 0.5702 | 0.6193 | 0.8930 |
+| Naive_Persistence_1h | 0.4545 | 0.6980 | 0.4294 | 1.0000 |
+| Seasonal_Lag24h | 0.7137 | 1.0430 | -0.2739 | 1.5703[cite: 7, 9]
+
+---
+
+### 5.4 Classification Models (Advance High-Load Event `>= 2.5 kW` at `t + 1h`)
+
+Predicting whether next-hour mean load reaches or exceeds `2.5 kW` achieves strong ranking performance (`ROC_AUC` up to `0.9184` for `RandomForest_C` and `0.9157` for `GradBoost_C`), with `GradBoost_C` achieving the strongest precision-recall balance (`PR_AUC = 0.5560`, `Precision = 0.5224`, `Recall = 0.5494`, `F1 = 0.5356`, `Brier = 0.0561` at tuned threshold `0.31`)[cite: 7, 9].
+
+| Classifier | Opt Threshold | Precision | Recall | F1 | ROC-AUC | PR-AUC | Brier |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| GradBoost_C | 0.31 | 0.5224 | 0.5494 | 0.5356 | 0.9157 | 0.5560 | 0.0561 |
+| RandomForest_C | 0.50 | 0.3897 | 0.7811 | 0.5200 | 0.9184 | 0.5458 | 0.0915 |
+| LogReg_Bal | 0.54 | 0.3394 | 0.8026 | 0.4770 | 0.9015 | 0.5406 | 0.1249 |
+| DecisionTree_C | 0.77 | 0.4644 | 0.5880 | 0.5189 | 0.8819 | 0.4563 | 0.1375[cite: 9]
+
+---
+
+### 5.5, 5.6 & 5.7 Unsupervised Clustering, Anomaly Detection, Uncertainty & Diagnostics
+
+* **Daily Load Profile Clustering (`k = 2`, Silhouette `= 0.2446`)**
+  * Grouping 24-hour daily load profiles identifies `k = 2` as the highest-silhouette partition (`0.2446`) in PCA space, separating lower-load/baseline days from higher-load/peaky days rather than claiming specific appliances[cite: 8, 9].
+* **Anomaly Detection Across Statistical & Unsupervised Methods**
+  * Detectors capture different anomaly sensitivities on the test set (`Stat |z|>3: 16`, `IsoForest: 52`, `LOF: 2012`, `OCSVM: 1159`), illustrating why threshold/contamination tuning and consensus review are essential to manage alert volume[cite: 8, 9].
+* **Uncertainty & Hourly Error Structure**
+  * Using `ExtraTrees` (`Test MAE = 0.3622 kW`), a validation-residual `80%` prediction interval achieves **`75.02%`** empirical test coverage, while hourly test MAE peaks during morning (`hour 6`, ~`0.61 kW`) and evening (`hours 17–20`, up to ~`0.67 kW`) ramp/peak windows compared to quieter overnight hours (`0–4`, ~`0.13–0.20 kW`)[cite: 8, 9].
+
+---
+
+### Visual Evidence & Plot Explanations
+
+* **Chronological Split, Lag Correlations & Top Features (`output 25.png`):** Shows non-overlapping `train` (`2007–2008`), `val`, and `test` time spans on the left, lag Pearson correlations peaking at `1h` (`~0.48`) and seasonal `24h`/`168h` lags (`~0.38–0.39`) in the middle, and `mean_a`, `mean_kw`, `max_kw`, and `residual_unmetered_kwh` leading linear correlation with the `+1h` target on the right[cite: 6].
+* **Model MAE, ROC Curves & Confusion Matrix (`output 26.png`):** Shows tree ensembles (`RandomForest`, `ExtraTrees`, `GradBoost`) achieving the lowest test MAE (~`0.36 kW`) ahead of linear models and naive/seasonal baselines on the left, ROC curves clustering well above the diagonal (`ROC-AUC > 0.88–0.92`) in the middle, and `GradBoost_C`'s test confusion matrix on the right[cite: 7].
+* **PCA Daily Clusters, Anomaly Overlay & Hourly MAE (`output 27.png`):** Displays the `k = 2` daily load profile clusters (`Silhouette = 0.24`) projected onto `PC1` and `PC2` on the left, sample `IsolationForest` anomaly flags overlaid on hourly `kW` over time in the middle, and test MAE by hour of day (`0–23`) peaking during morning and evening load transitions on the right[cite: 8].
+
+![5.1 Split, 5.2 Lag Correlations and Top Features](output%2025.png)[cite: 6]
+![5.3 Regression MAE, 5.4 ROC Curves and Confusion Matrix](output%2026.png)[cite: 7]
+![5.5 Daily Profiles PCA, 5.6 Anomaly Flags Over Time and 5.7 Test MAE by Hour](output%2027.png)[cite: 8]
+![Phase 5 Console Benchmark Summary](Screenshot%20(366).png)[cite: 9]
