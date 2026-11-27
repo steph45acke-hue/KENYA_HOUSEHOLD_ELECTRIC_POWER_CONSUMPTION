@@ -979,14 +979,14 @@ Section 4.4 applies SQL window functions (`OVER`, `PARTITION BY`, `ORDER BY`, `R
 
 ---
 
-#### 3. Plot Explanation & Visual Evidence (`output 23.jpg`)
+#### 3. Plot Explanation & Visual Evidence (`output 23.png`)
 
 * **Left Panel — 24-Hour Moving Average (First 14 Days):** Compares raw hourly mean load (light gray line, fluctuating rapidly between ~`0.3 kW` and `5.5 kW`) against the smoothed 24-hour rolling moving average (dark navy line), showing how the rolling window filters hour-to-hour spikes while preserving multi-day load waves (such as the rise around `2006-12-23`)[cite: 8].
 * **Middle Panel — Monthly #1 Peak Hour Frequency:** Plots how many months each hour of the day ranked #1 in mean active power, highlighting hour `20` (`11` months) and hour `21` (`8` months) as the dominant peak hours, followed by hours `19` (`3`), `22` (`2`), and `9` (`1`)[cite: 8].
 * **Right Panel — Rolling 24h Volatility & Spikes:** Tracks the 24-hour rolling standard deviation (purple curve) against the `1.42 kW` (`Mean + 2*SD`) red dashed spike threshold, visually pinpointing bursts of rapid load swings across 2007–2008 as well as low-variability stretches[cite: 7, 8].
 
-##### Window-Function Plots (`output 23.jpg`)
-![24-Hour Moving Average, Monthly #1 Peak Hour Frequency, and Rolling 24h Volatility Spikes](output%2023.jpg)[cite: 8]
+##### Window-Function Plots (`output 23.png`)
+![24-Hour Moving Average, Monthly #1 Peak Hour Frequency, and Rolling 24h Volatility Spikes](output%2023.png)[cite: 8]
 
 ##### Window-Query Console Output (`Screenshot (365).png`)
 ![Section 4.4 SQL Window Function Output in VS Code](Screenshot%20(365).png)[cite: 7]
