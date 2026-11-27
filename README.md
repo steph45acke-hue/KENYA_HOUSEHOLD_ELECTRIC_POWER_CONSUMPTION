@@ -941,3 +941,52 @@ Across the monthly CTE rollups, total monthly energy reaches highs such as **1,1
 
 ##### Section 4.3 Monthly Rollup & Sub-Meter Share Output (`Screenshot (364).png`)
 ![Section 4.3 Monthly Summary and Sub-Meter Energy Share Output in VS Code](Screenshot%20(364).png)[cite: 9]
+
+### Phase 4, Section 4.4: Advanced SQL: Window Functions
+
+Section 4.4 applies SQL window functions (`OVER`, `PARTITION BY`, `ORDER BY`, `ROWS` frames, `DENSE_RANK`, `RANK`, `NTILE`, `LAG`, `FIRST_VALUE`, `LAST_VALUE`, and gaps-and-islands logic) to rank monthly peak days and hours, compute period deltas and rolling averages, isolate consecutive load/gap spells, and detect rolling volatility spikes (`04_4_window_functions_portfolio.sql` inside `04_1_database_design_and_sql_modelling.ipynb`)[cite: 7, 8].
+
+---
+
+#### 1. How Window Functions Solve Each Analytical Problem
+
+* **Top 10 Consumption Days per Month & Monthly Peak Hours**
+  * Partitioning daily energy (`kWh`) by `year_num, month_num` with `DENSE_RANK() OVER (PARTITION BY year_num, month_num ORDER BY daily_kwh DESC)` ranks each month's highest-consumption days (for example, in `2006-12`, `2006-12-23` ranks #1 at `79.47 kWh`, `2006-12-26` ranks #2 at `65.45 kWh`, and `2006-12-31` ranks #3 at `57.69 kWh`; in `2007-01`, `2007-01-21` ranks #1 at `56.65 kWh` and `2007-01-04` ranks #2 at `54.09 kWh`)[cite: 7].
+  * Ranking monthly hourly averages with `RANK() OVER (PARTITION BY year_num, month_num ORDER BY avg_kw DESC)` identifies each month's #1 peak hour—concentrated in evening hours such as hour `20` (`2.8608 kW` in `2006-12`, `2.7488 kW` in `2007-01`), hour `19` (`2.5401 kW` in `2007-02`, `2.9616 kW` in `2007-03`), and hour `21` (`2.1475 kW` in `2007-04`, `2.2547 kW` in `2007-05`, `1.5822 kW` in `2007-06`)[cite: 7, 8].
+* **Period-over-Period Deltas, Moving Averages, Cumulative Energy & Monthly Share**
+  * `LAG(val, n) OVER (ORDER BY ts)` computes step-to-step changes across minutes (`n = 1`), hours (`n = 1`), same hour previous day (`n = 24`), and same hour previous week (`n = 168`) without self-joins[cite: 7].
+  * Framed moving averages (`ROWS BETWEEN 59 PRECEDING AND CURRENT ROW` for 60-minute windows and `23 PRECEDING` on hourly series for 24-hour windows) smooth short-term noise, while `SUM(kwh) OVER (PARTITION BY year_num, month_num ORDER BY ts ROWS UNBOUNDED PRECEDING)` tracks cumulative monthly energy and each observation's share of the monthly total[cite: 7].
+* **Gaps & Islands (High-Load Spells & Missing Intervals) and Peak Boundaries**
+  * Comparing each row against its `LAG` value flags spell starts or timestamp gaps (`> 1` minute), and a cumulative `SUM(...) OVER (ORDER BY ts)` groups consecutive rows into numbered islands (`spell_id` or missing-interval windows) with `MIN(ts)`, `MAX(ts)`, and duration[cite: 7].
+  * Filtering daily readings to daily maximum active power and applying `FIRST_VALUE` / `LAST_VALUE` (with `ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING`) captures the earliest and latest peak timestamps on any date—such as `2007-12-28` (`9.590 kW` at `17:04:00`) and `2007-03-05` (`9.486 kW` at `07:13:00`)[cite: 7].
+* **Rolling Standard Deviation & Volatility Spikes**
+  * Computing rolling 24-hour standard deviation and setting a spike cutoff at `Mean + 2 * SD` (`1.4158 kW`) isolates **340 spike hours** where short-term load swings become unusually sharp[cite: 7, 8].
+
+---
+
+#### 2. Sample Window-Query Results (`Screenshot (365).png`)
+
+| Query Group | Period / Date | Metric / Hour | Value | Notes |
+| :--- | :--- | :--- | :--- | :--- |
+| Top Day in Month | `2006-12-23` | `daily_kwh` (Rank 1) | `79.47 kWh` | Leads `2006-12` top 10 |
+| Top Day in Month | `2007-01-21` | `daily_kwh` (Rank 1) | `56.65 kWh` | Leads `2007-01` |
+| Monthly #1 Peak Hour | `2006-12` / `2007-01` | Hour `20` | `2.8608` / `2.7488 kW` | Evening peak |
+| Monthly #1 Peak Hour | `2007-02` / `2007-03` | Hour `19` | `2.5401` / `2.9616 kW` | Early evening peak |
+| Monthly #1 Peak Hour | `2007-04`–`2007-06` | Hour `21` | `2.1475`–`1.5822 kW` | Late evening peak |
+| Daily Peak Timestamp | `2007-12-28` | `peak_kw` | `9.590 kW` | First/last peak at `17:04:00` |
+| Daily Peak Timestamp | `2007-03-05` | `peak_kw` | `9.486 kW` | First/last peak at `07:13:00` |
+| Rolling Volatility | Full Hourly Series | Cutoff (`Mean + 2*SD`) | `1.4158 kW` | **340 spike hours** detected[cite: 7]
+
+---
+
+#### 3. Plot Explanation & Visual Evidence (`output 23.jpg`)
+
+* **Left Panel — 24-Hour Moving Average (First 14 Days):** Compares raw hourly mean load (light gray line, fluctuating rapidly between ~`0.3 kW` and `5.5 kW`) against the smoothed 24-hour rolling moving average (dark navy line), showing how the rolling window filters hour-to-hour spikes while preserving multi-day load waves (such as the rise around `2006-12-23`)[cite: 8].
+* **Middle Panel — Monthly #1 Peak Hour Frequency:** Plots how many months each hour of the day ranked #1 in mean active power, highlighting hour `20` (`11` months) and hour `21` (`8` months) as the dominant peak hours, followed by hours `19` (`3`), `22` (`2`), and `9` (`1`)[cite: 8].
+* **Right Panel — Rolling 24h Volatility & Spikes:** Tracks the 24-hour rolling standard deviation (purple curve) against the `1.42 kW` (`Mean + 2*SD`) red dashed spike threshold, visually pinpointing bursts of rapid load swings across 2007–2008 as well as low-variability stretches[cite: 7, 8].
+
+##### Window-Function Plots (`output 23.jpg`)
+![24-Hour Moving Average, Monthly #1 Peak Hour Frequency, and Rolling 24h Volatility Spikes](output%2023.jpg)[cite: 8]
+
+##### Window-Query Console Output (`Screenshot (365).png`)
+![Section 4.4 SQL Window Function Output in VS Code](Screenshot%20(365).png)[cite: 7]
