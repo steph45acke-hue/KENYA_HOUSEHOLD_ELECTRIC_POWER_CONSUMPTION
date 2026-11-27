@@ -1,4 +1,7 @@
-# ⚡ Kenya Household Electric Power Consumption Analytics & Forecasting Engine
+# ⚡ Kenya Household Electric Power Consumption Analytics & Forecasting ,
+<p align="center">
+  <img src="bunner.png" alt="Integrated Kenya Power Grid & Analytics — Powering Homesteads & Predictive Intelligence" width="100%">
+</p>
 
 <div align="center">
 
